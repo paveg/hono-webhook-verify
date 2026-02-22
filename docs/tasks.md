@@ -105,11 +105,11 @@ TDD で進める。テスト → 実装 → リファクタの順。
 - [x] テスト: RFC テストベクターで検証
 
 ### 1.4 Stripe Provider
-- [ ] `tests/helpers/signatures.ts` — generateStripeSignature()
-- [ ] `tests/providers/stripe.test.ts` を先に書く (P1〜P6 + T1〜T3)
-- [ ] `src/providers/stripe.ts`
-- [ ] Stripe-Signature ヘッダーのパース (`t=...,v1=...`)
-- [ ] タイムスタンプ付き署名検証
+- [x] `tests/helpers/signatures.ts` — generateStripeSignature()
+- [x] `tests/providers/stripe.test.ts` を先に書く (P1〜P6 + T1〜T3)
+- [x] `src/providers/stripe.ts`
+- [x] Stripe-Signature ヘッダーのパース (`t=...,v1=...`)
+- [x] タイムスタンプ付き署名検証
 
 ### 1.5 GitHub Provider
 - [ ] `tests/providers/github.test.ts` を先に書く (P1〜P6)
