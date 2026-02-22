@@ -150,9 +150,9 @@ TDD で進める。テスト → 実装 → リファクタの順。
 ## Phase 3: Publish & Promote (Week 3)
 
 ### 3.1 パッケージング
-- [ ] README.md (English) — "Verify webhooks from any provider with one line"
-- [ ] LICENSE (MIT)
-- [ ] サブパスエクスポート設定
+- [x] README.md (English) — "Verify webhooks from any provider with one line"
+- [x] LICENSE (MIT)
+- [x] サブパスエクスポート設定
 - [ ] npm publish + JSR publish
 
 ### 3.2 Hono 公式への PR
