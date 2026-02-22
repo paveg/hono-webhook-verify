@@ -155,11 +155,11 @@ TDD で進める。テスト → 実装 → リファクタの順。
 - [x] サブパスエクスポート設定
 - [x] npm publish (release workflow) + JSR publish (manual)
 
-### 3.2 Hono 公式への PR
+### 3.2 Hono 公式への PR (manual)
 - [ ] honojs/middleware リポジトリに third-party 掲載 PR
 - [ ] Hono Discord で告知
 
-### 3.3 プロモーション
+### 3.3 プロモーション (manual)
 - [ ] X/Twitter で告知
 - [ ] Reddit r/node, r/cloudflare に投稿
 - [ ] dev.to / Zenn に解説記事
@@ -169,7 +169,7 @@ TDD で進める。テスト → 実装 → リファクタの順。
 
 - [x] LINE Provider
 - [x] Discord Provider
-- [ ] PayPal Provider
+- [ ] PayPal Provider (requires certificate fetching from PayPal servers — skipped)
 - [x] Standard Webhooks (svix 互換) Provider
-- [ ] プロバイダー自動検出（ヘッダーからプロバイダーを推定）
+- [x] プロバイダー自動検出（ヘッダーからプロバイダーを推定）
 - [x] CONTRIBUTING.md — プロバイダー追加ガイド（コントリビューション誘引）
