@@ -144,8 +144,8 @@ TDD で進める。テスト → 実装 → リファクタの順。
 - [x] HMAC-SHA1 + URL + sorted params
 
 ### 2.4 defineProvider()
-- [ ] カスタムプロバイダー定義のヘルパー関数
-- [ ] テスト: カスタムプロバイダーで M1〜M3 が通ること
+- [x] カスタムプロバイダー定義のヘルパー関数
+- [x] テスト: カスタムプロバイダーで M1〜M3 が通ること
 
 ## Phase 3: Publish & Promote (Week 3)
 
