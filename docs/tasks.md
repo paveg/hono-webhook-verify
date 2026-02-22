@@ -6,7 +6,7 @@
 - [x] TypeScript (strict mode)
 - [x] vitest (テストランナー)
 - [x] tsup (ビルド)
-- [ ] changesets (バージョニング・リリース)
+- [x] changesets (バージョニング・リリース)
 
 ## Test Guardrails
 
