@@ -9,6 +9,7 @@ export default defineConfig({
 		"providers/shopify": "src/providers/shopify.ts",
 		"providers/twilio": "src/providers/twilio.ts",
 		"providers/line": "src/providers/line.ts",
+		"providers/discord": "src/providers/discord.ts",
 	},
 	format: ["esm", "cjs"],
 	dts: true,

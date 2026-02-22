@@ -76,6 +76,16 @@
 				"types": "./dist/providers/line.d.cts",
 				"default": "./dist/providers/line.cjs"
 			}
+		},
+		"./providers/discord": {
+			"import": {
+				"types": "./dist/providers/discord.d.ts",
+				"default": "./dist/providers/discord.js"
+			},
+			"require": {
+				"types": "./dist/providers/discord.d.cts",
+				"default": "./dist/providers/discord.cjs"
+			}
 		}
 	},
 	"sideEffects": false,
