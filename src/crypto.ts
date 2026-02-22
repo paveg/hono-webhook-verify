@@ -3,12 +3,13 @@ const encoder = new TextEncoder();
 /** Compute HMAC signature using Web Crypto API */
 export async function hmac(
 	algorithm: "SHA-256" | "SHA-1",
-	secret: string,
+	secret: string | ArrayBuffer,
 	data: string,
 ): Promise<ArrayBuffer> {
+	const keyData = typeof secret === "string" ? encoder.encode(secret) : secret;
 	const key = await crypto.subtle.importKey(
 		"raw",
-		encoder.encode(secret),
+		keyData,
 		{ name: "HMAC", hash: algorithm },
 		false,
 		["sign"],

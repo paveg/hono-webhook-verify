@@ -168,7 +168,7 @@ TDD で進める。テスト → 実装 → リファクタの順。
 ## Stretch Goals
 
 - [x] LINE Provider
-- [ ] Discord Provider
+- [x] Discord Provider
 - [ ] PayPal Provider
 - [ ] Standard Webhooks (svix 互換) Provider
 - [ ] プロバイダー自動検出（ヘッダーからプロバイダーを推定）
