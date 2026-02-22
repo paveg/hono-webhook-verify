@@ -17,6 +17,9 @@ Works on Cloudflare Workers, Deno, Bun, Node.js, and any platform that supports 
 | **Slack** | `X-Slack-Signature` | HMAC-SHA256 + timestamp |
 | **Shopify** | `X-Shopify-Hmac-Sha256` | HMAC-SHA256 (base64) |
 | **Twilio** | `X-Twilio-Signature` | HMAC-SHA1 + URL + params |
+| **LINE** | `X-Line-Signature` | HMAC-SHA256 (base64) |
+| **Discord** | `X-Signature-Ed25519` | Ed25519 |
+| **Standard Webhooks** | `webhook-signature` | HMAC-SHA256 (svix-compatible) |
 | **Custom** | Any | `defineProvider()` |
 
 ## Installation
@@ -112,6 +115,39 @@ webhookVerify({
 });
 ```
 
+### LINE
+
+```ts
+import { line } from "hono-webhook-verify/providers/line";
+
+webhookVerify({
+  provider: line({ channelSecret: "your-channel-secret" }),
+});
+```
+
+### Discord
+
+```ts
+import { discord } from "hono-webhook-verify/providers/discord";
+
+webhookVerify({
+  provider: discord({ publicKey: "your-ed25519-public-key-hex" }),
+});
+```
+
+### Standard Webhooks (svix-compatible)
+
+```ts
+import { standardWebhooks } from "hono-webhook-verify/providers/standard-webhooks";
+
+webhookVerify({
+  provider: standardWebhooks({
+    secret: "whsec_...", // base64-encoded secret with optional whsec_ prefix
+    tolerance: 300, // optional: timestamp tolerance in seconds (default: 300)
+  }),
+});
+```
+
 ### Custom Provider
 
 Use `defineProvider()` to create a provider for any webhook source:
@@ -181,11 +217,23 @@ webhookVerify({
 });
 ```
 
+## Provider Auto-Detection
+
+Use `detectProvider()` to identify the webhook source from request headers:
+
+```ts
+import { detectProvider } from "hono-webhook-verify";
+
+const provider = detectProvider(request.headers);
+// => "stripe" | "github" | "slack" | "shopify" | "twilio" | "line" | "discord" | "standard-webhooks" | null
+```
+
 ## Security
 
 - All signature comparisons use constant-time comparison (`crypto.subtle.timingSafeEqual` when available, XOR fallback otherwise)
 - Signatures are decoded to raw bytes before comparison to prevent timing leaks from string operations
-- Timestamp-based providers (Stripe, Slack) reject expired signatures to prevent replay attacks
+- Timestamp-based providers (Stripe, Slack, Standard Webhooks) reject expired signatures to prevent replay attacks
+- Discord uses Ed25519 asymmetric verification via `crypto.subtle.verify`
 
 ## License
 
