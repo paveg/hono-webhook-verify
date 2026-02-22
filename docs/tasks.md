@@ -170,6 +170,6 @@ TDD で進める。テスト → 実装 → リファクタの順。
 - [x] LINE Provider
 - [x] Discord Provider
 - [ ] PayPal Provider
-- [ ] Standard Webhooks (svix 互換) Provider
+- [x] Standard Webhooks (svix 互換) Provider
 - [ ] プロバイダー自動検出（ヘッダーからプロバイダーを推定）
 - [x] CONTRIBUTING.md — プロバイダー追加ガイド（コントリビューション誘引）
