@@ -139,9 +139,9 @@ TDD で進める。テスト → 実装 → リファクタの順。
 - [x] base64 エンコーディング
 
 ### 2.3 Twilio Provider
-- [ ] `tests/providers/twilio.test.ts` (P1〜P4 + TW1〜TW2)
-- [ ] `src/providers/twilio.ts`
-- [ ] HMAC-SHA1 + URL + sorted params
+- [x] `tests/providers/twilio.test.ts` (P1〜P4 + TW1〜TW2)
+- [x] `src/providers/twilio.ts`
+- [x] HMAC-SHA1 + URL + sorted params
 
 ### 2.4 defineProvider()
 - [ ] カスタムプロバイダー定義のヘルパー関数
