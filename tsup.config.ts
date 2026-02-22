@@ -10,6 +10,7 @@ export default defineConfig({
 		"providers/twilio": "src/providers/twilio.ts",
 		"providers/line": "src/providers/line.ts",
 		"providers/discord": "src/providers/discord.ts",
+		"providers/standard-webhooks": "src/providers/standard-webhooks.ts",
 	},
 	format: ["esm", "cjs"],
 	dts: true,

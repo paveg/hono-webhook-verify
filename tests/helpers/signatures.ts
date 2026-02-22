@@ -62,6 +62,24 @@ export async function generateLineSignature(body: string, channelSecret: string)
 	return toBase64(await hmac("SHA-256", channelSecret, body));
 }
 
+export async function generateStandardWebhooksSignature(
+	body: string,
+	secretBase64: string,
+	msgId: string,
+	timestamp?: number,
+): Promise<{ signature: string; timestamp: number }> {
+	const ts = timestamp ?? Math.floor(Date.now() / 1000);
+	const signedContent = `${msgId}.${ts}.${body}`;
+	// Decode base64 secret to raw bytes
+	const binary = atob(secretBase64);
+	const keyBytes = new Uint8Array(binary.length);
+	for (let i = 0; i < binary.length; i++) {
+		keyBytes[i] = binary.charCodeAt(i);
+	}
+	const sig = toBase64(await hmac("SHA-256", keyBytes.buffer as ArrayBuffer, signedContent));
+	return { signature: `v1,${sig}`, timestamp: ts };
+}
+
 export async function generateTwilioSignature(
 	url: string,
 	params: Record<string, string>,

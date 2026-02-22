@@ -86,6 +86,16 @@
 				"types": "./dist/providers/discord.d.cts",
 				"default": "./dist/providers/discord.cjs"
 			}
+		},
+		"./providers/standard-webhooks": {
+			"import": {
+				"types": "./dist/providers/standard-webhooks.d.ts",
+				"default": "./dist/providers/standard-webhooks.js"
+			},
+			"require": {
+				"types": "./dist/providers/standard-webhooks.d.cts",
+				"default": "./dist/providers/standard-webhooks.cjs"
+			}
 		}
 	},
 	"sideEffects": false,
