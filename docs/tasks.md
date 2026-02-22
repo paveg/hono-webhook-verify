@@ -112,9 +112,9 @@ TDD で進める。テスト → 実装 → リファクタの順。
 - [x] タイムスタンプ付き署名検証
 
 ### 1.5 GitHub Provider
-- [ ] `tests/providers/github.test.ts` を先に書く (P1〜P6)
-- [ ] `src/providers/github.ts`
-- [ ] `sha256=` prefix のパース
+- [x] `tests/providers/github.test.ts` を先に書く (P1〜P6)
+- [x] `src/providers/github.ts`
+- [x] `sha256=` prefix のパース
 
 ### 1.6 ミドルウェア本体
 - [ ] `tests/middleware.test.ts` を先に書く (M1〜M8)
