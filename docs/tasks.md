@@ -153,7 +153,7 @@ TDD で進める。テスト → 実装 → リファクタの順。
 - [x] README.md (English) — "Verify webhooks from any provider with one line"
 - [x] LICENSE (MIT)
 - [x] サブパスエクスポート設定
-- [ ] npm publish + JSR publish
+- [x] npm publish (release workflow) + JSR publish (manual)
 
 ### 3.2 Hono 公式への PR
 - [ ] honojs/middleware リポジトリに third-party 掲載 PR
