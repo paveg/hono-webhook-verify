@@ -91,18 +91,18 @@ hono-idempotency で学んだこと:
 TDD で進める。テスト → 実装 → リファクタの順。
 
 ### 1.1 プロジェクトセットアップ
-- [ ] リポジトリ作成、package.json、tsconfig.json、biome.json
-- [ ] vitest + tsup の設定
+- [x] リポジトリ作成、package.json、tsconfig.json、biome.json
+- [x] vitest + tsup の設定
 - [ ] CI (GitHub Actions): lint, test, build
 
 ### 1.2 型定義・Provider インターフェース
-- [ ] `src/types.ts` — WebhookVerifyOptions, VerifyResult
-- [ ] `src/providers/types.ts` — WebhookProvider, ProviderFactory, VerifyContext
+- [x] `src/types.ts` — WebhookVerifyOptions, VerifyResult
+- [x] `src/providers/types.ts` — WebhookProvider, ProviderFactory, VerifyContext
 
 ### 1.3 crypto ユーティリティ
-- [ ] `tests/crypto.test.ts` を先に書く (CR1〜CR3)
-- [ ] `src/crypto.ts` — hmac(), timingSafeEqual(), toHex(), toBase64()
-- [ ] テスト: RFC テストベクターで検証
+- [x] `tests/crypto.test.ts` を先に書く (CR1〜CR3)
+- [x] `src/crypto.ts` — hmac(), timingSafeEqual(), toHex(), toBase64()
+- [x] テスト: RFC テストベクターで検証
 
 ### 1.4 Stripe Provider
 - [ ] `tests/helpers/signatures.ts` — generateStripeSignature()
