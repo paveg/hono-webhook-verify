@@ -134,9 +134,9 @@ TDD で進める。テスト → 実装 → リファクタの順。
 - [x] `v0=` prefix + タイムスタンプ連結
 
 ### 2.2 Shopify Provider
-- [ ] `tests/providers/shopify.test.ts` (P1〜P6)
-- [ ] `src/providers/shopify.ts`
-- [ ] base64 エンコーディング
+- [x] `tests/providers/shopify.test.ts` (P1〜P6)
+- [x] `src/providers/shopify.ts`
+- [x] base64 エンコーディング
 
 ### 2.3 Twilio Provider
 - [ ] `tests/providers/twilio.test.ts` (P1〜P4 + TW1〜TW2)
