@@ -23,6 +23,18 @@ export function toHex(buffer: ArrayBuffer): string {
 		.join("");
 }
 
+/** Decode a lowercase hex string into an ArrayBuffer. Returns null for invalid input. */
+export function fromHex(hex: string): ArrayBuffer | null {
+	if (hex.length % 2 !== 0 || !/^[0-9a-f]*$/i.test(hex)) {
+		return null;
+	}
+	const bytes = new Uint8Array(hex.length / 2);
+	for (let i = 0; i < bytes.length; i++) {
+		bytes[i] = Number.parseInt(hex.slice(i * 2, i * 2 + 2), 16);
+	}
+	return bytes.buffer;
+}
+
 /** Convert ArrayBuffer to base64 string */
 export function toBase64(buffer: ArrayBuffer): string {
 	const bytes = new Uint8Array(buffer);
@@ -33,16 +45,48 @@ export function toBase64(buffer: ArrayBuffer): string {
 	return btoa(binary);
 }
 
-/** Constant-time string comparison to prevent timing attacks */
-export function timingSafeEqual(a: string, b: string): boolean {
-	const lenA = a.length;
-	const lenB = b.length;
-	const len = Math.max(lenA, lenB);
-	let result = lenA ^ lenB;
-	for (let i = 0; i < len; i++) {
-		const ca = i < lenA ? a.charCodeAt(i) : 0;
-		const cb = i < lenB ? b.charCodeAt(i) : 0;
-		result |= ca ^ cb;
+/** Decode a base64 string into an ArrayBuffer. Returns null for invalid input. */
+export function fromBase64(b64: string): ArrayBuffer | null {
+	try {
+		const binary = atob(b64);
+		const bytes = new Uint8Array(binary.length);
+		for (let i = 0; i < binary.length; i++) {
+			bytes[i] = binary.charCodeAt(i);
+		}
+		return bytes.buffer;
+	} catch {
+		return null;
 	}
-	return result === 0;
+}
+
+/**
+ * Constant-time comparison of two HMAC ArrayBuffers.
+ *
+ * Delegates to the runtime's native implementation so that the comparison
+ * is not subject to JIT optimisation or branch prediction that could leak
+ * timing information. Both buffers must be the same byte length (as is
+ * always the case when comparing two outputs of the same HMAC algorithm).
+ */
+export function timingSafeEqual(a: ArrayBuffer, b: ArrayBuffer): boolean {
+	if (a.byteLength !== b.byteLength) {
+		return false;
+	}
+	// crypto.subtle.timingSafeEqual is available in Node.js ≥ 19, Deno, and
+	// Cloudflare Workers. Use it when present; fall back to a pure-JS XOR
+	// accumulator only as a last resort.
+	const subtle = crypto.subtle as typeof crypto.subtle & {
+		timingSafeEqual?: (a: ArrayBuffer, b: ArrayBuffer) => boolean;
+	};
+	if (typeof subtle.timingSafeEqual === "function") {
+		return subtle.timingSafeEqual(a, b);
+	}
+	// Pure-JS fallback: accumulate XOR differences without early exit.
+	// This is best-effort; the native path above is strongly preferred.
+	const viewA = new Uint8Array(a);
+	const viewB = new Uint8Array(b);
+	let diff = 0;
+	for (let i = 0; i < viewA.length; i++) {
+		diff |= viewA[i] ^ viewB[i];
+	}
+	return diff === 0;
 }

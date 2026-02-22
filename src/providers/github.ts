@@ -1,4 +1,4 @@
-import { hmac, timingSafeEqual, toHex } from "../crypto.js";
+import { fromHex, hmac, timingSafeEqual } from "../crypto.js";
 import type { WebhookProvider } from "./types.js";
 
 interface GitHubOptions {
@@ -8,6 +8,13 @@ interface GitHubOptions {
 export function github(options: GitHubOptions): WebhookProvider {
 	const { secret } = options;
 
+	// Reject degenerate secrets at construction time rather than silently
+	// computing a valid HMAC that any attacker who knows the empty-secret
+	// digest could forge.
+	if (!secret) {
+		throw new Error("github: secret must not be empty");
+	}
+
 	return {
 		name: "github",
 		async verify({ rawBody, headers }) {
@@ -16,10 +23,20 @@ export function github(options: GitHubOptions): WebhookProvider {
 				return { valid: false, reason: "missing-signature" };
 			}
 
-			const signature = header.startsWith("sha256=") ? header.slice(7) : header;
-			const expected = toHex(await hmac("SHA-256", secret, rawBody));
+			// Distinguish a missing header from a structurally invalid one so
+			// that callers can produce accurate error messages and HTTP statuses.
+			if (!header.startsWith("sha256=")) {
+				return { valid: false, reason: "invalid-signature" };
+			}
 
-			if (!timingSafeEqual(expected, signature)) {
+			const received = fromHex(header.slice(7));
+			if (!received) {
+				return { valid: false, reason: "invalid-signature" };
+			}
+
+			const expected = await hmac("SHA-256", secret, rawBody);
+
+			if (!timingSafeEqual(expected, received)) {
 				return { valid: false, reason: "invalid-signature" };
 			}
 

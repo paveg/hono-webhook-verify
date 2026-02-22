@@ -1,4 +1,4 @@
-import { hmac, timingSafeEqual, toHex } from "../crypto.js";
+import { fromHex, hmac, timingSafeEqual } from "../crypto.js";
 import type { WebhookProvider } from "./types.js";
 
 interface StripeOptions {
@@ -45,9 +45,16 @@ export function stripe(options: StripeOptions): WebhookProvider {
 			}
 
 			const payload = `${timestamp}.${rawBody}`;
-			const expected = toHex(await hmac("SHA-256", secret, payload));
+			const expected = await hmac("SHA-256", secret, payload);
 
-			if (!signatures.some((sig) => timingSafeEqual(expected, sig))) {
+			// Decode each attacker-supplied hex signature to raw bytes and compare
+			// in the byte domain so the runtime's native constant-time path is used.
+			const matched = signatures.some((sig) => {
+				const received = fromHex(sig);
+				return received !== null && timingSafeEqual(expected, received);
+			});
+
+			if (!matched) {
 				return { valid: false, reason: "invalid-signature" };
 			}
 
