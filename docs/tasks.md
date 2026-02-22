@@ -117,12 +117,12 @@ TDD で進める。テスト → 実装 → リファクタの順。
 - [x] `sha256=` prefix のパース
 
 ### 1.6 ミドルウェア本体
-- [ ] `tests/middleware.test.ts` を先に書く (M1〜M8)
-- [ ] `src/middleware.ts` — createMiddleware() ベース
-- [ ] テスト: Stripe + GitHub で M1〜M8 をカバー
+- [x] `tests/middleware.test.ts` を先に書く (M1〜M8)
+- [x] `src/middleware.ts` — createMiddleware() ベース
+- [x] テスト: Stripe + GitHub で M1〜M8 をカバー
 
 ### 1.7 エラーレスポンス
-- [ ] `src/errors.ts` — RFC 9457 Problem Details
+- [x] `src/errors.ts` — RFC 9457 Problem Details
 
 ## Phase 2: Remaining Providers (Week 2)
 
