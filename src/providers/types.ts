@@ -8,7 +8,6 @@ export interface VerifyResult {
 export interface VerifyContext {
 	rawBody: string;
 	headers: Headers;
-	secret: string;
 	/** Required for Twilio (URL is part of the signature payload) */
 	url?: string;
 }

@@ -12,7 +12,6 @@ describe("github provider", () => {
 		const result = await provider.verify({
 			rawBody: BODY,
 			headers: new Headers({ "X-Hub-Signature-256": signature }),
-			secret: SECRET,
 		});
 		expect(result).toEqual({ valid: true });
 	});
@@ -23,7 +22,6 @@ describe("github provider", () => {
 		const result = await provider.verify({
 			rawBody: `${BODY}tampered`,
 			headers: new Headers({ "X-Hub-Signature-256": signature }),
-			secret: SECRET,
 		});
 		expect(result).toEqual({ valid: false, reason: "invalid-signature" });
 	});
@@ -34,7 +32,6 @@ describe("github provider", () => {
 		const result = await provider.verify({
 			rawBody: BODY,
 			headers: new Headers({ "X-Hub-Signature-256": signature }),
-			secret: SECRET,
 		});
 		expect(result).toEqual({ valid: false, reason: "invalid-signature" });
 	});
@@ -44,7 +41,6 @@ describe("github provider", () => {
 		const result = await provider.verify({
 			rawBody: BODY,
 			headers: new Headers(),
-			secret: SECRET,
 		});
 		expect(result).toEqual({ valid: false, reason: "missing-signature" });
 	});
@@ -55,7 +51,6 @@ describe("github provider", () => {
 		const result = await provider.verify({
 			rawBody: "",
 			headers: new Headers({ "X-Hub-Signature-256": signature }),
-			secret: SECRET,
 		});
 		expect(result).toEqual({ valid: true });
 	});
@@ -67,7 +62,6 @@ describe("github provider", () => {
 		const result = await provider.verify({
 			rawBody: body,
 			headers: new Headers({ "X-Hub-Signature-256": signature }),
-			secret: SECRET,
 		});
 		expect(result).toEqual({ valid: true });
 	});
@@ -82,7 +76,6 @@ describe("github provider", () => {
 			headers: new Headers({
 				"X-Hub-Signature-256": "not_a_valid_format",
 			}),
-			secret: SECRET,
 		});
 		expect(result).toEqual({ valid: false, reason: "invalid-signature" });
 	});
@@ -92,7 +85,6 @@ describe("github provider", () => {
 		const result = await provider.verify({
 			rawBody: BODY,
 			headers: new Headers({ "X-Hub-Signature-256": "sha256=deadbeef" }),
-			secret: SECRET,
 		});
 		expect(result).toEqual({ valid: false, reason: "invalid-signature" });
 	});
@@ -103,7 +95,6 @@ describe("github provider", () => {
 		const result = await provider.verify({
 			rawBody: BODY,
 			headers: new Headers({ "X-Hub-Signature-256": `sha256=${hex}` }),
-			secret: SECRET,
 		});
 		expect(result).toEqual({ valid: false, reason: "invalid-signature" });
 	});

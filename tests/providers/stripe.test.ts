@@ -12,7 +12,6 @@ describe("stripe provider", () => {
 		const result = await provider.verify({
 			rawBody: BODY,
 			headers: new Headers({ "Stripe-Signature": header }),
-			secret: SECRET,
 		});
 		expect(result).toEqual({ valid: true });
 	});
@@ -23,7 +22,6 @@ describe("stripe provider", () => {
 		const result = await provider.verify({
 			rawBody: `${BODY}tampered`,
 			headers: new Headers({ "Stripe-Signature": header }),
-			secret: SECRET,
 		});
 		expect(result.valid).toBe(false);
 		expect(result.reason).toBe("invalid-signature");
@@ -35,7 +33,6 @@ describe("stripe provider", () => {
 		const result = await provider.verify({
 			rawBody: BODY,
 			headers: new Headers({ "Stripe-Signature": header }),
-			secret: SECRET,
 		});
 		expect(result.valid).toBe(false);
 		expect(result.reason).toBe("invalid-signature");
@@ -46,7 +43,6 @@ describe("stripe provider", () => {
 		const result = await provider.verify({
 			rawBody: BODY,
 			headers: new Headers(),
-			secret: SECRET,
 		});
 		expect(result).toEqual({ valid: false, reason: "missing-signature" });
 	});
@@ -57,7 +53,6 @@ describe("stripe provider", () => {
 		const result = await provider.verify({
 			rawBody: "",
 			headers: new Headers({ "Stripe-Signature": header }),
-			secret: SECRET,
 		});
 		expect(result).toEqual({ valid: true });
 	});
@@ -69,7 +64,6 @@ describe("stripe provider", () => {
 		const result = await provider.verify({
 			rawBody: body,
 			headers: new Headers({ "Stripe-Signature": header }),
-			secret: SECRET,
 		});
 		expect(result).toEqual({ valid: true });
 	});
@@ -81,7 +75,6 @@ describe("stripe provider", () => {
 		const result = await provider.verify({
 			rawBody: BODY,
 			headers: new Headers({ "Stripe-Signature": header }),
-			secret: SECRET,
 		});
 		expect(result).toEqual({ valid: false, reason: "timestamp-expired" });
 	});
@@ -93,7 +86,6 @@ describe("stripe provider", () => {
 		const result = await provider.verify({
 			rawBody: BODY,
 			headers: new Headers({ "Stripe-Signature": header }),
-			secret: SECRET,
 		});
 		expect(result).toEqual({ valid: false, reason: "timestamp-expired" });
 	});
@@ -105,7 +97,6 @@ describe("stripe provider", () => {
 			headers: new Headers({
 				"Stripe-Signature": "t=abc,v1=fakesig",
 			}),
-			secret: SECRET,
 		});
 		expect(result).toEqual({ valid: false, reason: "missing-signature" });
 	});
@@ -115,7 +106,6 @@ describe("stripe provider", () => {
 		const result = await provider.verify({
 			rawBody: BODY,
 			headers: new Headers({ "Stripe-Signature": "invalid_header_format" }),
-			secret: SECRET,
 		});
 		expect(result).toEqual({ valid: false, reason: "missing-signature" });
 	});
