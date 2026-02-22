@@ -129,9 +129,9 @@ TDD で進める。テスト → 実装 → リファクタの順。
 プロバイダー追加は P1〜P6 の共通テストスイートで品質担保。
 
 ### 2.1 Slack Provider
-- [ ] `tests/providers/slack.test.ts` (P1〜P6 + T1〜T3)
-- [ ] `src/providers/slack.ts`
-- [ ] `v0=` prefix + タイムスタンプ連結
+- [x] `tests/providers/slack.test.ts` (P1〜P6 + T1〜T3)
+- [x] `src/providers/slack.ts`
+- [x] `v0=` prefix + タイムスタンプ連結
 
 ### 2.2 Shopify Provider
 - [ ] `tests/providers/shopify.test.ts` (P1〜P6)
