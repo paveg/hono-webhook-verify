@@ -1,4 +1,4 @@
-import { hmac, timingSafeEqual, toBase64 } from "../crypto.js";
+import { fromBase64, hmac, timingSafeEqual } from "../crypto.js";
 import type { WebhookProvider } from "./types.js";
 
 interface TwilioOptions {
@@ -32,9 +32,12 @@ export function twilio(options: TwilioOptions): WebhookProvider {
 				dataToSign += key + (params.get(key) ?? "");
 			}
 
-			const expected = toBase64(await hmac("SHA-1", authToken, dataToSign));
+			const expected = await hmac("SHA-1", authToken, dataToSign);
 
-			if (!timingSafeEqual(expected, signature)) {
+			// Decode the attacker-supplied base64 value to raw bytes so the
+			// comparison happens in the byte domain using the native runtime path.
+			const received = fromBase64(signature);
+			if (received === null || !timingSafeEqual(expected, received)) {
 				return { valid: false, reason: "invalid-signature" };
 			}
 

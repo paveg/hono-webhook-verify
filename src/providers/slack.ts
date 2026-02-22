@@ -1,4 +1,4 @@
-import { hmac, timingSafeEqual, toHex } from "../crypto.js";
+import { fromHex, hmac, timingSafeEqual } from "../crypto.js";
 import type { WebhookProvider } from "./types.js";
 
 interface SlackOptions {
@@ -27,12 +27,13 @@ export function slack(options: SlackOptions): WebhookProvider {
 			}
 
 			const sigBasestring = `v0:${timestamp}:${rawBody}`;
-			const expectedHex = toHex(await hmac("SHA-256", signingSecret, sigBasestring));
-			const expected = `v0=${expectedHex}`;
+			const expected = await hmac("SHA-256", signingSecret, sigBasestring);
 
-			const sig = signature.startsWith("v0=") ? signature : `v0=${signature}`;
-
-			if (!timingSafeEqual(expected, sig)) {
+			// Slack sends "v0=<hex>". Strip the prefix, decode to raw bytes, and
+			// compare in the byte domain for native constant-time safety.
+			const receivedHex = signature.startsWith("v0=") ? signature.slice(3) : signature;
+			const received = fromHex(receivedHex);
+			if (received === null || !timingSafeEqual(expected, received)) {
 				return { valid: false, reason: "invalid-signature" };
 			}
 

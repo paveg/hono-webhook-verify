@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { hmac, timingSafeEqual, toBase64, toHex } from "../src/crypto.js";
+import { fromBase64, fromHex, hmac, timingSafeEqual, toBase64, toHex } from "../src/crypto.js";
 
 describe("hmac", () => {
 	it("computes HMAC-SHA256 and returns correct hex", async () => {
@@ -36,6 +36,33 @@ describe("toHex", () => {
 	});
 });
 
+describe("fromHex", () => {
+	it("decodes a valid hex string", () => {
+		const buf = fromHex("00ff0aab") as ArrayBuffer;
+		expect(new Uint8Array(buf)).toEqual(new Uint8Array([0x00, 0xff, 0x0a, 0xab]));
+	});
+
+	it("returns null for odd-length input", () => {
+		expect(fromHex("abc")).toBeNull();
+	});
+
+	it("returns null for non-hex characters", () => {
+		expect(fromHex("zz")).toBeNull();
+	});
+
+	it("handles empty string", () => {
+		const buf = fromHex("") as ArrayBuffer;
+		expect(buf.byteLength).toBe(0);
+	});
+
+	it("round-trips with toHex", async () => {
+		const original = await hmac("SHA-256", "secret", "message");
+		const hex = toHex(original);
+		const decoded = fromHex(hex) as ArrayBuffer;
+		expect(new Uint8Array(decoded)).toEqual(new Uint8Array(original));
+	});
+});
+
 describe("toBase64", () => {
 	it("converts ArrayBuffer to base64 string", () => {
 		const buffer = new TextEncoder().encode("Hello").buffer;
@@ -47,32 +74,63 @@ describe("toBase64", () => {
 	});
 });
 
+describe("fromBase64", () => {
+	it("decodes a valid base64 string", () => {
+		const buf = fromBase64("SGVsbG8=") as ArrayBuffer;
+		expect(new TextDecoder().decode(buf)).toBe("Hello");
+	});
+
+	it("returns null for invalid base64", () => {
+		expect(fromBase64("!!!")).toBeNull();
+	});
+
+	it("handles empty string", () => {
+		const buf = fromBase64("") as ArrayBuffer;
+		expect(buf.byteLength).toBe(0);
+	});
+
+	it("round-trips with toBase64", async () => {
+		const original = await hmac("SHA-256", "secret", "message");
+		const b64 = toBase64(original);
+		const decoded = fromBase64(b64) as ArrayBuffer;
+		expect(new Uint8Array(decoded)).toEqual(new Uint8Array(original));
+	});
+});
+
 describe("timingSafeEqual", () => {
-	it("returns true for matching strings", () => {
-		expect(timingSafeEqual("abc", "abc")).toBe(true);
-	});
-
-	it("returns false for mismatching strings", () => {
-		expect(timingSafeEqual("abc", "abd")).toBe(false);
-	});
-
-	it("returns false for different lengths", () => {
-		expect(timingSafeEqual("abc", "ab")).toBe(false);
-		expect(timingSafeEqual("ab", "abc")).toBe(false);
-	});
-
-	it("returns true for empty strings", () => {
-		expect(timingSafeEqual("", "")).toBe(true);
-	});
-
-	it("returns false when one string is a prefix of the other", () => {
-		expect(timingSafeEqual("abc", "abcd")).toBe(false);
-		expect(timingSafeEqual("abcd", "abc")).toBe(false);
-	});
-
-	it("handles long strings", () => {
-		const a = "a".repeat(10000);
-		const b = "a".repeat(10000);
+	it("returns true for identical buffers", async () => {
+		const a = await hmac("SHA-256", "secret", "message");
+		const b = await hmac("SHA-256", "secret", "message");
 		expect(timingSafeEqual(a, b)).toBe(true);
+	});
+
+	it("returns false for different HMAC outputs", async () => {
+		const a = await hmac("SHA-256", "secret", "message");
+		const b = await hmac("SHA-256", "secret", "other");
+		expect(timingSafeEqual(a, b)).toBe(false);
+	});
+
+	it("returns false for different byte lengths", async () => {
+		const a = await hmac("SHA-256", "secret", "message");
+		const b = await hmac("SHA-1", "secret", "message");
+		expect(timingSafeEqual(a, b)).toBe(false);
+	});
+
+	it("returns true for empty buffers", () => {
+		expect(timingSafeEqual(new ArrayBuffer(0), new ArrayBuffer(0))).toBe(true);
+	});
+
+	it("returns false when buffers differ in the last byte only", () => {
+		const a = new Uint8Array([0x00, 0x01, 0x02, 0xff]);
+		const b = new Uint8Array([0x00, 0x01, 0x02, 0xfe]);
+		expect(timingSafeEqual(a.buffer, b.buffer)).toBe(false);
+	});
+
+	it("does not short-circuit on length mismatch — returns false without leaking content", () => {
+		// Verifies the length guard is present and returns false, not that it
+		// runs in constant time (which cannot be asserted in JS).
+		const a = new Uint8Array([0xaa, 0xbb]);
+		const b = new Uint8Array([0xaa, 0xbb, 0xcc]);
+		expect(timingSafeEqual(a.buffer, b.buffer)).toBe(false);
 	});
 });

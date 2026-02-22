@@ -1,4 +1,4 @@
-import { hmac, timingSafeEqual, toBase64 } from "../crypto.js";
+import { fromBase64, hmac, timingSafeEqual } from "../crypto.js";
 import type { WebhookProvider } from "./types.js";
 
 interface ShopifyOptions {
@@ -16,9 +16,12 @@ export function shopify(options: ShopifyOptions): WebhookProvider {
 				return { valid: false, reason: "missing-signature" };
 			}
 
-			const expected = toBase64(await hmac("SHA-256", secret, rawBody));
+			const expected = await hmac("SHA-256", secret, rawBody);
 
-			if (!timingSafeEqual(expected, header)) {
+			// Decode the attacker-supplied base64 value to raw bytes so the
+			// comparison happens in the byte domain using the native runtime path.
+			const received = fromBase64(header);
+			if (received === null || !timingSafeEqual(expected, received)) {
 				return { valid: false, reason: "invalid-signature" };
 			}
 
