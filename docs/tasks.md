@@ -4,8 +4,8 @@
 
 - [x] biome (lint + format)
 - [x] TypeScript (strict mode)
-- [ ] vitest (テストランナー)
-- [ ] tsup (ビルド)
+- [x] vitest (テストランナー)
+- [x] tsup (ビルド)
 - [ ] changesets (バージョニング・リリース)
 
 ## Test Guardrails
@@ -93,7 +93,7 @@ TDD で進める。テスト → 実装 → リファクタの順。
 ### 1.1 プロジェクトセットアップ
 - [x] リポジトリ作成、package.json、tsconfig.json、biome.json
 - [x] vitest + tsup の設定
-- [ ] CI (GitHub Actions): lint, test, build
+- [x] CI (GitHub Actions): lint, test, build
 
 ### 1.2 型定義・Provider インターフェース
 - [x] `src/types.ts` — WebhookVerifyOptions, VerifyResult
