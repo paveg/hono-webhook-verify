@@ -8,6 +8,7 @@ export default defineConfig({
 		"providers/slack": "src/providers/slack.ts",
 		"providers/shopify": "src/providers/shopify.ts",
 		"providers/twilio": "src/providers/twilio.ts",
+		"providers/line": "src/providers/line.ts",
 	},
 	format: ["esm", "cjs"],
 	dts: true,

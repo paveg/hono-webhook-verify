@@ -31,6 +31,10 @@ export async function generateShopifySignature(body: string, secret: string): Pr
 	return toBase64(await hmac("SHA-256", secret, body));
 }
 
+export async function generateLineSignature(body: string, channelSecret: string): Promise<string> {
+	return toBase64(await hmac("SHA-256", channelSecret, body));
+}
+
 export async function generateTwilioSignature(
 	url: string,
 	params: Record<string, string>,

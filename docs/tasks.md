@@ -172,4 +172,4 @@ TDD で進める。テスト → 実装 → リファクタの順。
 - [ ] PayPal Provider
 - [ ] Standard Webhooks (svix 互換) Provider
 - [ ] プロバイダー自動検出（ヘッダーからプロバイダーを推定）
-- [ ] CONTRIBUTING.md — プロバイダー追加ガイド（コントリビューション誘引）
+- [x] CONTRIBUTING.md — プロバイダー追加ガイド（コントリビューション誘引）
