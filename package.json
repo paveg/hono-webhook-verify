@@ -66,6 +66,16 @@
 				"types": "./dist/providers/twilio.d.cts",
 				"default": "./dist/providers/twilio.cjs"
 			}
+		},
+		"./providers/line": {
+			"import": {
+				"types": "./dist/providers/line.d.ts",
+				"default": "./dist/providers/line.js"
+			},
+			"require": {
+				"types": "./dist/providers/line.d.cts",
+				"default": "./dist/providers/line.cjs"
+			}
 		}
 	},
 	"sideEffects": false,
