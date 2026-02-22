@@ -21,6 +21,9 @@ export function slack(options: SlackOptions): WebhookProvider {
 			}
 
 			const ts = Number(timestamp);
+			if (!Number.isFinite(ts) || ts <= 0) {
+				return { valid: false, reason: "missing-signature" };
+			}
 			const now = Math.floor(Date.now() / 1000);
 			if (Math.abs(now - ts) > tolerance) {
 				return { valid: false, reason: "timestamp-expired" };
