@@ -35,10 +35,14 @@ export function toBase64(buffer: ArrayBuffer): string {
 
 /** Constant-time string comparison to prevent timing attacks */
 export function timingSafeEqual(a: string, b: string): boolean {
-	if (a.length !== b.length) return false;
-	let result = 0;
-	for (let i = 0; i < a.length; i++) {
-		result |= a.charCodeAt(i) ^ b.charCodeAt(i);
+	const lenA = a.length;
+	const lenB = b.length;
+	const len = Math.max(lenA, lenB);
+	let result = lenA ^ lenB;
+	for (let i = 0; i < len; i++) {
+		const ca = i < lenA ? a.charCodeAt(i) : 0;
+		const cb = i < lenB ? b.charCodeAt(i) : 0;
+		result |= ca ^ cb;
 	}
 	return result === 0;
 }
