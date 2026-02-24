@@ -17,11 +17,16 @@ export async function hmac(
 	return crypto.subtle.sign("HMAC", key, encoder.encode(data));
 }
 
+const HEX_TABLE = Array.from({ length: 256 }, (_, i) => i.toString(16).padStart(2, "0"));
+
 /** Convert ArrayBuffer to hex string */
 export function toHex(buffer: ArrayBuffer): string {
-	return Array.from(new Uint8Array(buffer))
-		.map((b) => b.toString(16).padStart(2, "0"))
-		.join("");
+	const bytes = new Uint8Array(buffer);
+	let hex = "";
+	for (let i = 0; i < bytes.length; i++) {
+		hex += HEX_TABLE[bytes[i]];
+	}
+	return hex;
 }
 
 /** Decode a lowercase hex string into an ArrayBuffer. Returns null for invalid input. */
