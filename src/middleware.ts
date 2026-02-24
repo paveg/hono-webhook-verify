@@ -1,8 +1,20 @@
 import { createMiddleware } from "hono/factory";
+import { getHonoProblemDetails } from "./compat.js";
 import { bodyReadFailed, invalidSignature, missingSignature, timestampExpired } from "./errors.js";
 import type { WebhookVerifyError, WebhookVerifyOptions, WebhookVerifyVariables } from "./types.js";
 
-function errorResponse(error: WebhookVerifyError): Response {
+async function errorResponse(error: WebhookVerifyError): Promise<Response> {
+	const pd = await getHonoProblemDetails();
+	if (pd) {
+		return pd
+			.problemDetails({
+				type: error.type,
+				title: error.title,
+				status: error.status,
+				detail: error.detail,
+			})
+			.getResponse();
+	}
 	return new Response(JSON.stringify(error), {
 		status: error.status,
 		headers: { "Content-Type": "application/problem+json" },
