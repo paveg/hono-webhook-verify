@@ -1,76 +1,76 @@
 # Implementation Tasks
 
-## Tooling（hono-idempotency と同一）
+## Tooling (same as hono-idempotency)
 
 - [x] biome (lint + format)
 - [x] TypeScript (strict mode)
-- [x] vitest (テストランナー)
-- [x] tsup (ビルド)
-- [x] changesets (バージョニング・リリース)
+- [x] vitest (test runner)
+- [x] tsup (build)
+- [x] changesets (versioning & release)
 
 ## Test Guardrails
 
-hono-idempotency とは異なり、参照実装となるライブラリがないため、
-各プロバイダー公式ドキュメントの仕様をガードレールとする。
+Unlike hono-idempotency, there is no reference implementation library to test against.
+Each provider's official documentation serves as the test guardrail.
 
-### 各プロバイダー共通テスト (P1〜P7)
+### Common Provider Tests (P1-P7)
 
-**すべてのプロバイダー実装で同じテストパターンを通す**（hono-idempotency の S1〜S6 と同じ思想）。
+**All provider implementations must pass the same test patterns** (same philosophy as hono-idempotency's S1-S6).
 
-| # | テストケース | 期待動作 | 優先度 |
-|---|-------------|---------|-------|
-| P1 | 正しい secret + 正しい body → 検証成功 | `{ valid: true }` | **必須** |
-| P2 | 正しい secret + 改竄された body → 検証失敗 | `{ valid: false }` | **必須** |
-| P3 | 誤った secret + 正しい body → 検証失敗 | `{ valid: false }` | **必須** |
-| P4 | 署名ヘッダー未指定 → 検証失敗 | `{ valid: false, reason: 'missing-signature' }` | **必須** |
-| P5 | 空文字列のボディ → 検証成功（署名が正しい場合） | `{ valid: true }` | 中 |
-| P6 | マルチバイト文字を含むボディ → 検証成功 | UTF-8 エンコーディング整合性 | 中 |
-| P7 | 大きなボディ (1MB) → 検証成功 | パフォーマンス問題なし | 低 |
+| # | Test Case | Expected | Priority |
+|---|-----------|----------|----------|
+| P1 | Correct secret + correct body → verification passes | `{ valid: true }` | **Required** |
+| P2 | Correct secret + tampered body → verification fails | `{ valid: false }` | **Required** |
+| P3 | Wrong secret + correct body → verification fails | `{ valid: false }` | **Required** |
+| P4 | Missing signature header → verification fails | `{ valid: false, reason: 'missing-signature' }` | **Required** |
+| P5 | Empty body → verification passes (with correct signature) | `{ valid: true }` | Medium |
+| P6 | Multibyte body → verification passes | UTF-8 encoding consistency | Medium |
+| P7 | Large body (1MB) → verification passes | No performance issues | Low |
 
-### タイムスタンプ付きプロバイダー追加テスト (T1〜T3)
+### Timestamp Provider Additional Tests (T1-T3)
 
-Stripe, Slack のみ。
+For Stripe, Slack, Standard Webhooks.
 
-| # | テストケース | 期待動作 | 優先度 |
-|---|-------------|---------|-------|
-| T1 | 現在時刻のタイムスタンプ → 検証成功 | tolerance 内 | **必須** |
-| T2 | 6分前のタイムスタンプ (tolerance=300s) → 検証失敗 | `{ valid: false, reason: 'timestamp-expired' }` | **必須** |
-| T3 | カスタム tolerance 設定 → 設定値が反映される | tolerance=60 で 2分前 → 失敗 | **必須** |
+| # | Test Case | Expected | Priority |
+|---|-----------|----------|----------|
+| T1 | Current timestamp → verification passes | Within tolerance | **Required** |
+| T2 | Timestamp 6 min ago (tolerance=300s) → verification fails | `{ valid: false, reason: 'timestamp-expired' }` | **Required** |
+| T3 | Custom tolerance setting → applied correctly | tolerance=60, 2 min ago → fails | **Required** |
 
-### Twilio 固有テスト (TW1〜TW2)
+### Twilio-Specific Tests (TW1-TW2)
 
-| # | テストケース | 期待動作 | 優先度 |
-|---|-------------|---------|-------|
-| TW1 | URL + ソート済み POST パラメータで署名検証 | 正しい署名で成功 | **必須** |
-| TW2 | パラメータ順序が異なる → ソート後の検証で成功 | ソートロジックの正確性 | **必須** |
+| # | Test Case | Expected | Priority |
+|---|-----------|----------|----------|
+| TW1 | URL + sorted POST parameters signature verification | Passes with correct signature | **Required** |
+| TW2 | Parameters in different order → passes after sort | Sort logic correctness | **Required** |
 
-### ミドルウェア統合テスト (M1〜M8)
+### Middleware Integration Tests (M1-M8)
 
-`app.request()` を使った HTTP レベルのテスト。
+HTTP-level tests using `app.request()`.
 
-| # | テストケース | 期待動作 | ステータス | 優先度 |
-|---|-------------|---------|----------|-------|
-| M1 | 正しい署名 → ハンドラー実行 | 200 + ハンドラーの戻り値 | 200 | **必須** |
-| M2 | 不正な署名 → 401 | RFC 9457 エラー | 401 | **必須** |
-| M3 | 署名ヘッダーなし → 401 | `missing-signature` | 401 | **必須** |
-| M4 | タイムスタンプ期限切れ → 401 | `timestamp-expired` | 401 | **必須** |
-| M5 | `c.get('webhookRawBody')` で raw body 取得 | 元の body と一致 | — | **必須** |
-| M6 | `c.get('webhookPayload')` で JSON 取得 | パース済みオブジェクト | — | **必須** |
-| M7 | `c.get('webhookProvider')` でプロバイダー名取得 | `'stripe'` 等 | — | **必須** |
-| M8 | `onError` カスタムエラーハンドリング | カスタムレスポンス | — | 中 |
+| # | Test Case | Expected | Status | Priority |
+|---|-----------|----------|--------|----------|
+| M1 | Valid signature → handler executes | 200 + handler return value | 200 | **Required** |
+| M2 | Invalid signature → 401 | RFC 9457 error | 401 | **Required** |
+| M3 | No signature header → 401 | `missing-signature` | 401 | **Required** |
+| M4 | Timestamp expired → 401 | `timestamp-expired` | 401 | **Required** |
+| M5 | `c.get('webhookRawBody')` retrieves raw body | Matches original body | — | **Required** |
+| M6 | `c.get('webhookPayload')` retrieves JSON | Parsed object | — | **Required** |
+| M7 | `c.get('webhookProvider')` retrieves provider name | `'stripe'` etc. | — | **Required** |
+| M8 | `onError` custom error handling | Custom response | — | Medium |
 
-### crypto ユーティリティテスト (CR1〜CR3)
+### Crypto Utility Tests (CR1-CR3)
 
-| # | テストケース | 期待動作 | 優先度 |
-|---|-------------|---------|-------|
-| CR1 | HMAC-SHA256 の hex 出力が既知値と一致 | RFC テストベクター検証 | **必須** |
-| CR2 | HMAC-SHA1 の base64 出力が既知値と一致 | Twilio 用 | **必須** |
-| CR3 | timingSafeEqual: 一致 → true、不一致 → false、長さ違い → false | 定数時間比較 | **必須** |
+| # | Test Case | Expected | Priority |
+|---|-----------|----------|----------|
+| CR1 | HMAC-SHA256 hex output matches known value | RFC test vector verification | **Required** |
+| CR2 | HMAC-SHA1 base64 output matches known value | For Twilio | **Required** |
+| CR3 | timingSafeEqual: match → true, mismatch → false, length diff → false | Constant-time comparison | **Required** |
 
-### テスト戦略: 署名生成ヘルパー
+### Test Strategy: Signature Generation Helpers
 
-テストでは各プロバイダーの「本物の署名」を生成するヘルパーを用意する。
-これにより外部サービスへの依存なしでテストが完結する。
+Tests use helpers that generate "real" signatures for each provider.
+This allows tests to be self-contained without external service dependencies.
 
 ```ts
 // tests/helpers/signatures.ts
@@ -81,95 +81,94 @@ export async function generateShopifySignature(body: string, secret: string): Pr
 export async function generateTwilioSignature(url: string, params: Record<string, string>, authToken: string): Promise<string>
 ```
 
-hono-idempotency で学んだこと:
-外部サービスのモック（miniflare 等）よりも、最小インターフェースに対するテストの方が
-セットアップが軽く、メンテナンスしやすい。
-ここでは「署名生成ヘルパー = テスト用の trusted source」として機能する。
+Lesson from hono-idempotency:
+Testing against minimal interfaces is lighter and more maintainable than mocking external services (e.g., miniflare).
+Here, "signature generation helpers = trusted source for testing" serves that role.
 
 ## Phase 1: Core + 2 Providers (Week 1)
 
-TDD で進める。テスト → 実装 → リファクタの順。
+TDD approach: test → implement → refactor.
 
-### 1.1 プロジェクトセットアップ
-- [x] リポジトリ作成、package.json、tsconfig.json、biome.json
-- [x] vitest + tsup の設定
+### 1.1 Project Setup
+- [x] Repository creation, package.json, tsconfig.json, biome.json
+- [x] vitest + tsup configuration
 - [x] CI (GitHub Actions): lint, test, build
 
-### 1.2 型定義・Provider インターフェース
+### 1.2 Type Definitions / Provider Interface
 - [x] `src/types.ts` — WebhookVerifyOptions, VerifyResult
 - [x] `src/providers/types.ts` — WebhookProvider, ProviderFactory, VerifyContext
 
-### 1.3 crypto ユーティリティ
-- [x] `tests/crypto.test.ts` を先に書く (CR1〜CR3)
+### 1.3 Crypto Utilities
+- [x] Write `tests/crypto.test.ts` first (CR1-CR3)
 - [x] `src/crypto.ts` — hmac(), timingSafeEqual(), toHex(), toBase64()
-- [x] テスト: RFC テストベクターで検証
+- [x] Tests: Verify against RFC test vectors
 
 ### 1.4 Stripe Provider
 - [x] `tests/helpers/signatures.ts` — generateStripeSignature()
-- [x] `tests/providers/stripe.test.ts` を先に書く (P1〜P6 + T1〜T3)
+- [x] Write `tests/providers/stripe.test.ts` first (P1-P6 + T1-T3)
 - [x] `src/providers/stripe.ts`
-- [x] Stripe-Signature ヘッダーのパース (`t=...,v1=...`)
-- [x] タイムスタンプ付き署名検証
+- [x] Stripe-Signature header parsing (`t=...,v1=...`)
+- [x] Timestamp-based signature verification
 
 ### 1.5 GitHub Provider
-- [x] `tests/providers/github.test.ts` を先に書く (P1〜P6)
+- [x] Write `tests/providers/github.test.ts` first (P1-P6)
 - [x] `src/providers/github.ts`
-- [x] `sha256=` prefix のパース
+- [x] `sha256=` prefix parsing
 
-### 1.6 ミドルウェア本体
-- [x] `tests/middleware.test.ts` を先に書く (M1〜M8)
-- [x] `src/middleware.ts` — createMiddleware() ベース
-- [x] テスト: Stripe + GitHub で M1〜M8 をカバー
+### 1.6 Middleware Core
+- [x] Write `tests/middleware.test.ts` first (M1-M8)
+- [x] `src/middleware.ts` — createMiddleware()-based
+- [x] Tests: Cover M1-M8 with Stripe + GitHub
 
-### 1.7 エラーレスポンス
+### 1.7 Error Responses
 - [x] `src/errors.ts` — RFC 9457 Problem Details
 
 ## Phase 2: Remaining Providers (Week 2)
 
-プロバイダー追加は P1〜P6 の共通テストスイートで品質担保。
+Provider additions are quality-assured by the shared P1-P6 test suite.
 
 ### 2.1 Slack Provider
-- [x] `tests/providers/slack.test.ts` (P1〜P6 + T1〜T3)
+- [x] `tests/providers/slack.test.ts` (P1-P6 + T1-T3)
 - [x] `src/providers/slack.ts`
-- [x] `v0=` prefix + タイムスタンプ連結
+- [x] `v0=` prefix + timestamp concatenation
 
 ### 2.2 Shopify Provider
-- [x] `tests/providers/shopify.test.ts` (P1〜P6)
+- [x] `tests/providers/shopify.test.ts` (P1-P6)
 - [x] `src/providers/shopify.ts`
-- [x] base64 エンコーディング
+- [x] base64 encoding
 
 ### 2.3 Twilio Provider
-- [x] `tests/providers/twilio.test.ts` (P1〜P4 + TW1〜TW2)
+- [x] `tests/providers/twilio.test.ts` (P1-P4 + TW1-TW2)
 - [x] `src/providers/twilio.ts`
 - [x] HMAC-SHA1 + URL + sorted params
 
 ### 2.4 defineProvider()
-- [x] カスタムプロバイダー定義のヘルパー関数
-- [x] テスト: カスタムプロバイダーで M1〜M3 が通ること
+- [x] Custom provider definition helper function
+- [x] Tests: Custom provider passes M1-M3
 
 ## Phase 3: Publish & Promote (Week 3)
 
-### 3.1 パッケージング
+### 3.1 Packaging
 - [x] README.md (English) — "Verify webhooks from any provider with one line"
 - [x] LICENSE (MIT)
-- [x] サブパスエクスポート設定
+- [x] Subpath export configuration
 - [x] npm publish (release workflow) + JSR publish (manual)
 
-### 3.2 Hono 公式への PR (manual)
-- [ ] honojs/middleware リポジトリに third-party 掲載 PR
-- [ ] Hono Discord で告知
+### 3.2 Hono Official PR (manual)
+- [ ] Submit third-party listing PR to honojs/middleware repository
+- [ ] Announce in Hono Discord
 
-### 3.3 プロモーション (manual)
-- [ ] X/Twitter で告知
-- [ ] Reddit r/node, r/cloudflare に投稿
-- [ ] dev.to / Zenn に解説記事
-- [ ] hono-idempotency の README に "See Also" で相互リンク
+### 3.3 Promotion (manual)
+- [ ] Announce on X/Twitter
+- [ ] Post to Reddit r/node, r/cloudflare
+- [ ] Write explanation article on dev.to / Zenn
+- [ ] Add "See Also" cross-link in hono-idempotency README
 
 ## Stretch Goals
 
 - [x] LINE Provider
 - [x] Discord Provider
 - [ ] PayPal Provider (requires certificate fetching from PayPal servers — skipped)
-- [x] Standard Webhooks (svix 互換) Provider
-- [x] プロバイダー自動検出（ヘッダーからプロバイダーを推定）
-- [x] CONTRIBUTING.md — プロバイダー追加ガイド（コントリビューション誘引）
+- [x] Standard Webhooks (svix-compatible) Provider
+- [x] Provider auto-detection (infer provider from headers)
+- [x] CONTRIBUTING.md — Provider addition guide (to encourage contributions)

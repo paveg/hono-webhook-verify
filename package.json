@@ -1,7 +1,7 @@
 {
 	"name": "hono-webhook-verify",
 	"version": "0.1.1",
-	"description": "Webhook signature verification middleware for Hono. Supports Stripe, GitHub, Slack, Shopify, Twilio and custom providers.",
+	"description": "Webhook signature verification middleware for Hono. Supports Stripe, GitHub, Slack, Shopify, Twilio, LINE, Discord, Standard Webhooks, and custom providers.",
 	"type": "module",
 	"main": "./dist/index.cjs",
 	"module": "./dist/index.js",
