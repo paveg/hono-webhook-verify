@@ -9,6 +9,9 @@ on:
 jobs:
   ci:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [20, 22, 24]
     steps:
       - uses: actions/checkout@v4
 
@@ -16,12 +19,23 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: ${{ matrix.node-version }}
           cache: pnpm
 
       - run: pnpm install --frozen-lockfile
 
       - run: pnpm lint
+
       - run: pnpm typecheck
-      - run: pnpm test
+
+      - run: pnpm vitest run --coverage
+
       - run: pnpm build
+
+  ci-pass:
+    if: always()
+    needs: ci
+    runs-on: ubuntu-latest
+    steps:
+      - run: exit 1
+        if: needs.ci.result != 'success'
