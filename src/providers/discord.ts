@@ -1,7 +1,7 @@
 import { fromHex } from "../crypto.js";
 import type { WebhookProvider } from "./types.js";
 
-interface DiscordOptions {
+export interface DiscordOptions {
 	publicKey: string;
 }
 

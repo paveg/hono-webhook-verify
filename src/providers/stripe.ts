@@ -1,7 +1,7 @@
 import { fromHex, hmac, timingSafeEqual } from "../crypto.js";
 import type { WebhookProvider } from "./types.js";
 
-interface StripeOptions {
+export interface StripeOptions {
 	secret: string;
 	/** Timestamp tolerance in seconds (default: 300 = 5 minutes) */
 	tolerance?: number;

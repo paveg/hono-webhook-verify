@@ -1,7 +1,7 @@
 import { fromHex, hmac, timingSafeEqual } from "../crypto.js";
 import type { WebhookProvider } from "./types.js";
 
-interface SlackOptions {
+export interface SlackOptions {
 	signingSecret: string;
 	/** Timestamp tolerance in seconds (default: 300 = 5 minutes) */
 	tolerance?: number;

@@ -1,7 +1,7 @@
 import { fromHex, hmac, timingSafeEqual } from "../crypto.js";
 import type { WebhookProvider } from "./types.js";
 
-interface GitHubOptions {
+export interface GitHubOptions {
 	secret: string;
 }
 

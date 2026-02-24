@@ -1,7 +1,7 @@
 import { fromBase64, hmac, timingSafeEqual } from "../crypto.js";
 import type { WebhookProvider } from "./types.js";
 
-interface LineOptions {
+export interface LineOptions {
 	channelSecret: string;
 }
 
