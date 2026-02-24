@@ -8,6 +8,10 @@ export interface LineOptions {
 export function line(options: LineOptions): WebhookProvider {
 	const { channelSecret } = options;
 
+	if (!channelSecret) {
+		throw new Error("line: channelSecret must not be empty");
+	}
+
 	return {
 		name: "line",
 		async verify({ rawBody, headers }) {

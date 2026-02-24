@@ -123,6 +123,10 @@ describe("stripe provider", () => {
 		expect(result).toEqual({ valid: false, reason: "missing-signature" });
 	});
 
+	it("throws on empty secret", () => {
+		expect(() => stripe({ secret: "" })).toThrow("secret must not be empty");
+	});
+
 	it("rejects malformed header without t= or v1=", async () => {
 		const provider = stripe({ secret: SECRET });
 		const result = await provider.verify({

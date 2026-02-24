@@ -26,6 +26,10 @@ describe("shopify provider", () => {
 		expect(result).toEqual({ valid: false, reason: "invalid-signature" });
 	});
 
+	it("throws on empty secret", () => {
+		expect(() => shopify({ secret: "" })).toThrow("secret must not be empty");
+	});
+
 	it("rejects wrong secret", async () => {
 		const provider = shopify({ secret: SECRET });
 		const signature = await generateShopifySignature(BODY, "wrong_secret");

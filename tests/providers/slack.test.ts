@@ -45,6 +45,10 @@ describe("slack provider", () => {
 		expect(result).toEqual({ valid: false, reason: "invalid-signature" });
 	});
 
+	it("throws on empty signingSecret", () => {
+		expect(() => slack({ signingSecret: "" })).toThrow("signingSecret must not be empty");
+	});
+
 	it("rejects missing signature header", async () => {
 		const provider = slack({ signingSecret: SECRET });
 		const result = await provider.verify({

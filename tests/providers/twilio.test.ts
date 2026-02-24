@@ -67,6 +67,10 @@ describe("twilio provider", () => {
 		expect(result).toEqual({ valid: false, reason: "invalid-signature" });
 	});
 
+	it("throws on empty authToken", () => {
+		expect(() => twilio({ authToken: "" })).toThrow("authToken must not be empty");
+	});
+
 	it("rejects missing signature header", async () => {
 		const provider = twilio({ authToken: AUTH_TOKEN });
 		const result = await provider.verify({
