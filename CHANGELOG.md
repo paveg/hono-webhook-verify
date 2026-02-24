@@ -1,5 +1,11 @@
 # hono-webhook-verify
 
+## 0.1.1
+
+### Patch Changes
+
+- Refactor Twilio provider to eliminate unreachable branch, achieve 100% test coverage
+
 ## 0.1.0
 
 ### Minor Changes
