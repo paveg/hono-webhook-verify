@@ -128,7 +128,7 @@ describe("discord provider", () => {
 				"X-Signature-Timestamp": TIMESTAMP,
 			}),
 		});
-		// Second call hits the cachedKey branch
+		// Second call reuses the cached key promise
 		const sig2 = await generateDiscordSignature("second", "2000000000", PRIVATE_KEY);
 		const result = await provider.verify({
 			rawBody: "second",
