@@ -1,7 +1,7 @@
 import { fromBase64, hmac, timingSafeEqual } from "../crypto.js";
 import type { WebhookProvider } from "./types.js";
 
-interface StandardWebhooksOptions {
+export interface StandardWebhooksOptions {
 	secret: string;
 	/** Timestamp tolerance in seconds (default: 300 = 5 minutes) */
 	tolerance?: number;
