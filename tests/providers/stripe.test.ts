@@ -101,6 +101,28 @@ describe("stripe provider", () => {
 		expect(result).toEqual({ valid: false, reason: "missing-signature" });
 	});
 
+	it("rejects zero timestamp", async () => {
+		const provider = stripe({ secret: SECRET });
+		const result = await provider.verify({
+			rawBody: BODY,
+			headers: new Headers({
+				"Stripe-Signature": "t=0,v1=fakesig",
+			}),
+		});
+		expect(result).toEqual({ valid: false, reason: "missing-signature" });
+	});
+
+	it("rejects negative timestamp", async () => {
+		const provider = stripe({ secret: SECRET });
+		const result = await provider.verify({
+			rawBody: BODY,
+			headers: new Headers({
+				"Stripe-Signature": "t=-100,v1=fakesig",
+			}),
+		});
+		expect(result).toEqual({ valid: false, reason: "missing-signature" });
+	});
+
 	it("rejects malformed header without t= or v1=", async () => {
 		const provider = stripe({ secret: SECRET });
 		const result = await provider.verify({
