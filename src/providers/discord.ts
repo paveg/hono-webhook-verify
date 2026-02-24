@@ -17,12 +17,13 @@ export function discord(options: DiscordOptions): WebhookProvider {
 	// Store in a typed variable so TypeScript narrows across the closure.
 	const keyBytes: ArrayBuffer = rawKey;
 
-	let cachedKey: CryptoKey | null = null;
+	let keyPromise: Promise<CryptoKey> | null = null;
 
-	async function getKey(): Promise<CryptoKey> {
-		if (cachedKey) return cachedKey;
-		cachedKey = await crypto.subtle.importKey("raw", keyBytes, "Ed25519", false, ["verify"]);
-		return cachedKey;
+	function getKey(): Promise<CryptoKey> {
+		if (!keyPromise) {
+			keyPromise = crypto.subtle.importKey("raw", keyBytes, "Ed25519", false, ["verify"]);
+		}
+		return keyPromise;
 	}
 
 	return {
