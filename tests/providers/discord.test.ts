@@ -146,6 +146,13 @@ describe("discord provider", () => {
 		);
 	});
 
+	it("throws on wrong-length publicKey", () => {
+		// 16 bytes (32 hex chars) instead of required 32 bytes (64 hex chars)
+		expect(() => discord({ publicKey: "ab".repeat(16) })).toThrow(
+			"publicKey must be 32 bytes (64 hex characters)",
+		);
+	});
+
 	it("returns invalid-signature when crypto.subtle.verify throws", async () => {
 		const provider = discord({ publicKey: PUBLIC_KEY });
 		const signature = await generateDiscordSignature(BODY, TIMESTAMP, PRIVATE_KEY);
