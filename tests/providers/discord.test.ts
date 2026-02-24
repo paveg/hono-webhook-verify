@@ -1,4 +1,4 @@
-import { beforeAll, describe, expect, it } from "vitest";
+import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { discord } from "../../src/providers/discord.js";
 import { generateDiscordSignature, generateEd25519KeyPair } from "../helpers/signatures.js";
 
@@ -116,5 +116,51 @@ describe("discord provider", () => {
 			}),
 		});
 		expect(result).toEqual({ valid: false, reason: "invalid-signature" });
+	});
+
+	it("uses cached key on second verification", async () => {
+		const provider = discord({ publicKey: PUBLIC_KEY });
+		const sig1 = await generateDiscordSignature(BODY, TIMESTAMP, PRIVATE_KEY);
+		await provider.verify({
+			rawBody: BODY,
+			headers: new Headers({
+				"X-Signature-Ed25519": sig1,
+				"X-Signature-Timestamp": TIMESTAMP,
+			}),
+		});
+		// Second call hits the cachedKey branch
+		const sig2 = await generateDiscordSignature("second", "2000000000", PRIVATE_KEY);
+		const result = await provider.verify({
+			rawBody: "second",
+			headers: new Headers({
+				"X-Signature-Ed25519": sig2,
+				"X-Signature-Timestamp": "2000000000",
+			}),
+		});
+		expect(result).toEqual({ valid: true });
+	});
+
+	it("throws on invalid hex publicKey", () => {
+		expect(() => discord({ publicKey: "not-valid-hex!!!" })).toThrow(
+			"publicKey must be a valid hex string",
+		);
+	});
+
+	it("returns invalid-signature when crypto.subtle.verify throws", async () => {
+		const provider = discord({ publicKey: PUBLIC_KEY });
+		const signature = await generateDiscordSignature(BODY, TIMESTAMP, PRIVATE_KEY);
+		const spy = vi.spyOn(crypto.subtle, "verify").mockRejectedValueOnce(new Error("boom"));
+		try {
+			const result = await provider.verify({
+				rawBody: BODY,
+				headers: new Headers({
+					"X-Signature-Ed25519": signature,
+					"X-Signature-Timestamp": TIMESTAMP,
+				}),
+			});
+			expect(result).toEqual({ valid: false, reason: "invalid-signature" });
+		} finally {
+			spy.mockRestore();
+		}
 	});
 });

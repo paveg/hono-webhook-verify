@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { fromBase64, fromHex, hmac, timingSafeEqual, toBase64, toHex } from "../src/crypto.js";
 
 describe("hmac", () => {
@@ -132,5 +132,26 @@ describe("timingSafeEqual", () => {
 		const a = new Uint8Array([0xaa, 0xbb]);
 		const b = new Uint8Array([0xaa, 0xbb, 0xcc]);
 		expect(timingSafeEqual(a.buffer, b.buffer)).toBe(false);
+	});
+
+	it("delegates to crypto.subtle.timingSafeEqual when available", () => {
+		const originalSubtle = crypto.subtle;
+		const mockTimingSafeEqual = vi.fn(() => true);
+		// Patch subtle with the mock
+		Object.defineProperty(crypto, "subtle", {
+			value: { ...originalSubtle, timingSafeEqual: mockTimingSafeEqual },
+			configurable: true,
+		});
+		try {
+			const a = new Uint8Array([1, 2]).buffer;
+			const b = new Uint8Array([1, 2]).buffer;
+			expect(timingSafeEqual(a, b)).toBe(true);
+			expect(mockTimingSafeEqual).toHaveBeenCalledWith(a, b);
+		} finally {
+			Object.defineProperty(crypto, "subtle", {
+				value: originalSubtle,
+				configurable: true,
+			});
+		}
 	});
 });

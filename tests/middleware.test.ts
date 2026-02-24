@@ -1,6 +1,6 @@
 import type { Context } from "hono";
 import { Hono } from "hono";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { webhookVerify } from "../src/middleware.js";
 import { github } from "../src/providers/github.js";
 import { stripe } from "../src/providers/stripe.js";
@@ -154,5 +154,81 @@ describe("webhookVerify middleware", () => {
 		expect(res.status).toBe(403);
 		const body = await res.json();
 		expect(body.custom).toBe(true);
+	});
+
+	it("M11: returns 400 when body read fails", async () => {
+		const app = new Hono<{ Variables: WebhookVerifyVariables }>();
+		app.post("/webhook", webhookVerify({ provider: github({ secret: GITHUB_SECRET }) }), (c) =>
+			c.json({ ok: true }),
+		);
+		// Create a request whose body stream has already been consumed
+		const original = new Request("http://localhost/webhook", {
+			method: "POST",
+			body: BODY,
+		});
+		// Consume the body so .text() rejects on second read
+		await original.text();
+		const res = await app.fetch(original);
+		expect(res.status).toBe(400);
+		const body = await res.json();
+		expect(body.type).toContain("body-read-failed");
+	});
+
+	it("M12: falls back to invalid-signature when provider returns no reason", async () => {
+		const app = new Hono<{ Variables: WebhookVerifyVariables }>();
+		app.post(
+			"/webhook",
+			webhookVerify({
+				provider: {
+					name: "test",
+					verify: async () => ({ valid: false }),
+				},
+			}),
+			(c) => c.json({ ok: true }),
+		);
+		const res = await app.request("/webhook", { method: "POST", body: BODY });
+		expect(res.status).toBe(401);
+		const body = await res.json();
+		expect(body.type).toContain("invalid-signature");
+	});
+
+	it("M13: uses fallback detail for unknown reason codes", async () => {
+		const app = new Hono<{ Variables: WebhookVerifyVariables }>();
+		app.post(
+			"/webhook",
+			webhookVerify({
+				provider: {
+					name: "test",
+					verify: async () => ({ valid: false, reason: "custom-error" as "invalid-signature" }),
+				},
+			}),
+			(c) => c.json({ ok: true }),
+		);
+		const res = await app.request("/webhook", { method: "POST", body: BODY });
+		expect(res.status).toBe(401);
+		const body = await res.json();
+		expect(body.detail).toBe("Signature verification failed");
+	});
+
+	it("M14: body read failure triggers onError callback", async () => {
+		const app = new Hono<{ Variables: WebhookVerifyVariables }>();
+		app.post(
+			"/webhook",
+			webhookVerify({
+				provider: github({ secret: GITHUB_SECRET }),
+				onError: (error, c) => c.json({ custom: true, title: error.title }, 422),
+			}),
+			(c) => c.json({ ok: true }),
+		);
+		const original = new Request("http://localhost/webhook", {
+			method: "POST",
+			body: BODY,
+		});
+		await original.text();
+		const res = await app.fetch(original);
+		expect(res.status).toBe(422);
+		const body = await res.json();
+		expect(body.custom).toBe(true);
+		expect(body.title).toBe("Failed to read request body");
 	});
 });

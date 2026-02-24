@@ -222,4 +222,66 @@ describe("standard-webhooks provider", () => {
 		});
 		expect(result).toEqual({ valid: true });
 	});
+
+	it("throws on invalid base64 secret", () => {
+		expect(() => standardWebhooks({ secret: "!!invalid!!" })).toThrow(
+			"secret must be valid base64",
+		);
+	});
+
+	it("rejects zero timestamp", async () => {
+		const provider = standardWebhooks({ secret: SECRET });
+		const { signature } = await generateStandardWebhooksSignature(BODY, SECRET_BASE64, MSG_ID);
+		const result = await provider.verify({
+			rawBody: BODY,
+			headers: new Headers({
+				"webhook-id": MSG_ID,
+				"webhook-timestamp": "0",
+				"webhook-signature": signature,
+			}),
+		});
+		expect(result).toEqual({ valid: false, reason: "missing-signature" });
+	});
+
+	it("rejects negative timestamp", async () => {
+		const provider = standardWebhooks({ secret: SECRET });
+		const { signature } = await generateStandardWebhooksSignature(BODY, SECRET_BASE64, MSG_ID);
+		const result = await provider.verify({
+			rawBody: BODY,
+			headers: new Headers({
+				"webhook-id": MSG_ID,
+				"webhook-timestamp": "-100",
+				"webhook-signature": signature,
+			}),
+		});
+		expect(result).toEqual({ valid: false, reason: "missing-signature" });
+	});
+
+	it("rejects non-numeric timestamp", async () => {
+		const provider = standardWebhooks({ secret: SECRET });
+		const { signature } = await generateStandardWebhooksSignature(BODY, SECRET_BASE64, MSG_ID);
+		const result = await provider.verify({
+			rawBody: BODY,
+			headers: new Headers({
+				"webhook-id": MSG_ID,
+				"webhook-timestamp": "not-a-number",
+				"webhook-signature": signature,
+			}),
+		});
+		expect(result).toEqual({ valid: false, reason: "missing-signature" });
+	});
+
+	it("rejects signatures without v1 prefix", async () => {
+		const provider = standardWebhooks({ secret: SECRET });
+		const { timestamp } = await generateStandardWebhooksSignature(BODY, SECRET_BASE64, MSG_ID);
+		const result = await provider.verify({
+			rawBody: BODY,
+			headers: new Headers({
+				"webhook-id": MSG_ID,
+				"webhook-timestamp": String(timestamp),
+				"webhook-signature": "v2,somebase64data",
+			}),
+		});
+		expect(result).toEqual({ valid: false, reason: "invalid-signature" });
+	});
 });
