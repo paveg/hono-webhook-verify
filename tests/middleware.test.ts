@@ -123,10 +123,8 @@ describe("webhookVerify middleware", () => {
 	it("M9: sets webhookPayload to null for non-JSON body", async () => {
 		const nonJsonBody = "not-json-content";
 		const app = new Hono<{ Variables: WebhookVerifyVariables }>();
-		app.post(
-			"/webhook",
-			webhookVerify({ provider: github({ secret: GITHUB_SECRET }) }),
-			(c) => c.json({ payload: c.get("webhookPayload") }),
+		app.post("/webhook", webhookVerify({ provider: github({ secret: GITHUB_SECRET }) }), (c) =>
+			c.json({ payload: c.get("webhookPayload") }),
 		);
 		const signature = await generateGitHubSignature(nonJsonBody, GITHUB_SECRET);
 		const res = await app.request("/webhook", {
