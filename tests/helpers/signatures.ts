@@ -84,11 +84,25 @@ export async function generateTwilioSignature(
 	url: string,
 	params: Record<string, string>,
 	authToken: string,
+	rawBody?: string,
 ): Promise<string> {
-	const sortedKeys = Object.keys(params).sort();
 	let dataToSign = url;
-	for (const key of sortedKeys) {
-		dataToSign += key + params[key];
+	if (rawBody !== undefined) {
+		// Replicate the provider's signing logic for raw body
+		const p = new URLSearchParams(rawBody);
+		const entries: [string, string][] = [];
+		p.forEach((value, key) => {
+			entries.push([key, value]);
+		});
+		entries.sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0));
+		for (const [key, value] of entries) {
+			dataToSign += key + value;
+		}
+	} else {
+		const sortedKeys = Object.keys(params).sort();
+		for (const key of sortedKeys) {
+			dataToSign += key + params[key];
+		}
 	}
 	return toBase64(await hmac("SHA-1", authToken, dataToSign));
 }

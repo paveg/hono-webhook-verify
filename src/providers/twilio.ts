@@ -26,14 +26,14 @@ export function twilio(options: TwilioOptions): WebhookProvider {
 
 			// Twilio signs: URL + sorted POST parameters
 			const params = new URLSearchParams(rawBody);
-			const sortedKeys: string[] = [];
-			params.forEach((_value, key) => {
-				sortedKeys.push(key);
+			const entries: [string, string][] = [];
+			params.forEach((value, key) => {
+				entries.push([key, value]);
 			});
-			sortedKeys.sort();
+			entries.sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0));
 			let dataToSign = url;
-			for (const key of sortedKeys) {
-				dataToSign += key + (params.get(key) ?? "");
+			for (const [key, value] of entries) {
+				dataToSign += key + value;
 			}
 
 			const expected = await hmac("SHA-1", authToken, dataToSign);

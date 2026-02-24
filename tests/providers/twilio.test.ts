@@ -101,4 +101,18 @@ describe("twilio provider", () => {
 		});
 		expect(result).toEqual({ valid: true });
 	});
+
+	it("handles duplicate parameter keys", async () => {
+		const provider = twilio({ authToken: AUTH_TOKEN });
+		// URLSearchParams with duplicate keys: "a=1&a=2"
+		// forEach yields two entries with key "a", sort comparator returns 0
+		const body = "a=1&a=2";
+		const signature = await generateTwilioSignature(URL, {}, AUTH_TOKEN, body);
+		const result = await provider.verify({
+			rawBody: body,
+			headers: new Headers({ "X-Twilio-Signature": signature }),
+			url: URL,
+		});
+		expect(result).toEqual({ valid: true });
+	});
 });

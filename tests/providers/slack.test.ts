@@ -161,4 +161,18 @@ describe("slack provider", () => {
 		});
 		expect(result).toEqual({ valid: false, reason: "missing-signature" });
 	});
+
+	it("rejects signature without v0= prefix as invalid", async () => {
+		const provider = slack({ signingSecret: SECRET });
+		const { timestamp } = await generateSlackSignature(BODY, SECRET);
+		// Send raw hex without v0= prefix — fromHex will succeed but HMAC won't match
+		const result = await provider.verify({
+			rawBody: BODY,
+			headers: new Headers({
+				"X-Slack-Signature": "aa".repeat(32),
+				"X-Slack-Request-Timestamp": String(timestamp),
+			}),
+		});
+		expect(result).toEqual({ valid: false, reason: "invalid-signature" });
+	});
 });
