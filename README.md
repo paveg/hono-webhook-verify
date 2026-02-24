@@ -152,10 +152,16 @@ webhookVerify({
 
 ### Custom Provider
 
-Use `defineProvider()` to create a provider for any webhook source:
+Use `defineProvider()` with the built-in crypto utilities to create a provider for any webhook source:
 
 ```ts
-import { defineProvider, webhookVerify } from "hono-webhook-verify";
+import {
+  defineProvider,
+  webhookVerify,
+  hmac,
+  fromHex,
+  timingSafeEqual,
+} from "hono-webhook-verify";
 
 const myProvider = defineProvider<{ secret: string }>((options) => ({
   name: "my-service",
@@ -164,7 +170,11 @@ const myProvider = defineProvider<{ secret: string }>((options) => ({
     if (!signature) {
       return { valid: false, reason: "missing-signature" };
     }
-    // Your verification logic here
+    const expected = await hmac("SHA-256", options.secret, rawBody);
+    const received = fromHex(signature);
+    if (!received || !timingSafeEqual(expected, received)) {
+      return { valid: false, reason: "invalid-signature" };
+    }
     return { valid: true };
   },
 }));
@@ -175,6 +185,8 @@ app.post(
   (c) => c.json({ ok: true }),
 );
 ```
+
+Available crypto utilities: `hmac`, `toHex`, `fromHex`, `toBase64`, `fromBase64`, `timingSafeEqual`.
 
 ## Context Variables
 
