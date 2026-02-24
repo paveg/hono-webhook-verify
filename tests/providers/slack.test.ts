@@ -119,6 +119,32 @@ describe("slack provider", () => {
 		expect(result).toEqual({ valid: false, reason: "timestamp-expired" });
 	});
 
+	it("rejects zero timestamp", async () => {
+		const provider = slack({ signingSecret: SECRET });
+		const { signature } = await generateSlackSignature(BODY, SECRET);
+		const result = await provider.verify({
+			rawBody: BODY,
+			headers: new Headers({
+				"X-Slack-Signature": signature,
+				"X-Slack-Request-Timestamp": "0",
+			}),
+		});
+		expect(result).toEqual({ valid: false, reason: "missing-signature" });
+	});
+
+	it("rejects negative timestamp", async () => {
+		const provider = slack({ signingSecret: SECRET });
+		const { signature } = await generateSlackSignature(BODY, SECRET);
+		const result = await provider.verify({
+			rawBody: BODY,
+			headers: new Headers({
+				"X-Slack-Signature": signature,
+				"X-Slack-Request-Timestamp": "-100",
+			}),
+		});
+		expect(result).toEqual({ valid: false, reason: "missing-signature" });
+	});
+
 	it("rejects non-numeric timestamp", async () => {
 		const provider = slack({ signingSecret: SECRET });
 		const { signature } = await generateSlackSignature(BODY, SECRET);

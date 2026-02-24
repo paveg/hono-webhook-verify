@@ -1,6 +1,6 @@
 import type { VerifyContext, VerifyResult, WebhookProvider } from "./providers/types.js";
 
-interface DefineProviderInput {
+export interface DefineProviderInput {
 	name: string;
 	verify(ctx: VerifyContext): Promise<VerifyResult>;
 }

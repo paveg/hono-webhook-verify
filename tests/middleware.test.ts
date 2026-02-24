@@ -120,7 +120,26 @@ describe("webhookVerify middleware", () => {
 		expect(body.detail).toContain("missing");
 	});
 
-	it("M9: custom onError returns custom response", async () => {
+	it("M9: sets webhookPayload to null for non-JSON body", async () => {
+		const nonJsonBody = "not-json-content";
+		const app = new Hono<{ Variables: WebhookVerifyVariables }>();
+		app.post(
+			"/webhook",
+			webhookVerify({ provider: github({ secret: GITHUB_SECRET }) }),
+			(c) => c.json({ payload: c.get("webhookPayload") }),
+		);
+		const signature = await generateGitHubSignature(nonJsonBody, GITHUB_SECRET);
+		const res = await app.request("/webhook", {
+			method: "POST",
+			body: nonJsonBody,
+			headers: { "X-Hub-Signature-256": signature },
+		});
+		expect(res.status).toBe(200);
+		const body = await res.json();
+		expect(body.payload).toBeNull();
+	});
+
+	it("M10: custom onError returns custom response", async () => {
 		const app = new Hono<{ Variables: WebhookVerifyVariables }>();
 		app.post(
 			"/webhook",
