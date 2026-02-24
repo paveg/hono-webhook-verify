@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { stripe } from "../../src/providers/stripe.js";
+import { EXPIRED_OFFSET_S } from "../helpers/constants.js";
 import { generateStripeSignature } from "../helpers/signatures.js";
 
 const SECRET = "whsec_test_secret";
@@ -70,8 +71,30 @@ describe("stripe provider", () => {
 
 	it("rejects expired timestamp", async () => {
 		const provider = stripe({ secret: SECRET });
-		const sixMinAgo = Math.floor(Date.now() / 1000) - 360;
-		const { header } = await generateStripeSignature(BODY, SECRET, sixMinAgo);
+		const expired = Math.floor(Date.now() / 1000) - EXPIRED_OFFSET_S;
+		const { header } = await generateStripeSignature(BODY, SECRET, expired);
+		const result = await provider.verify({
+			rawBody: BODY,
+			headers: new Headers({ "Stripe-Signature": header }),
+		});
+		expect(result).toEqual({ valid: false, reason: "timestamp-expired" });
+	});
+
+	it("accepts timestamp at exactly the tolerance boundary", async () => {
+		const provider = stripe({ secret: SECRET, tolerance: 60 });
+		const exactlyAtBoundary = Math.floor(Date.now() / 1000) - 60;
+		const { header } = await generateStripeSignature(BODY, SECRET, exactlyAtBoundary);
+		const result = await provider.verify({
+			rawBody: BODY,
+			headers: new Headers({ "Stripe-Signature": header }),
+		});
+		expect(result).toEqual({ valid: true });
+	});
+
+	it("rejects with tolerance: 0 when timestamp is 1 second off", async () => {
+		const provider = stripe({ secret: SECRET, tolerance: 0 });
+		const oneSecAgo = Math.floor(Date.now() / 1000) - 1;
+		const { header } = await generateStripeSignature(BODY, SECRET, oneSecAgo);
 		const result = await provider.verify({
 			rawBody: BODY,
 			headers: new Headers({ "Stripe-Signature": header }),
@@ -125,6 +148,16 @@ describe("stripe provider", () => {
 
 	it("throws on empty secret", () => {
 		expect(() => stripe({ secret: "" })).toThrow("secret must not be empty");
+	});
+
+	it("rejects empty signature value (v1=)", async () => {
+		const provider = stripe({ secret: SECRET });
+		const ts = Math.floor(Date.now() / 1000);
+		const result = await provider.verify({
+			rawBody: BODY,
+			headers: new Headers({ "Stripe-Signature": `t=${ts},v1=` }),
+		});
+		expect(result).toEqual({ valid: false, reason: "invalid-signature" });
 	});
 
 	it("rejects malformed header without t= or v1=", async () => {

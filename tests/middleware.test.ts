@@ -5,6 +5,7 @@ import { webhookVerify } from "../src/middleware.js";
 import { github } from "../src/providers/github.js";
 import { stripe } from "../src/providers/stripe.js";
 import type { WebhookVerifyVariables } from "../src/types.js";
+import { EXPIRED_OFFSET_S } from "./helpers/constants.js";
 import { generateGitHubSignature, generateStripeSignature } from "./helpers/signatures.js";
 
 const GITHUB_SECRET = "gh_test_secret";
@@ -76,7 +77,7 @@ describe("webhookVerify middleware", () => {
 
 	it("M4: rejects expired timestamp with 401 (Stripe)", async () => {
 		const app = createStripeApp();
-		const sixMinAgo = Math.floor(Date.now() / 1000) - 360;
+		const sixMinAgo = Math.floor(Date.now() / 1000) - EXPIRED_OFFSET_S;
 		const { header } = await generateStripeSignature(BODY, STRIPE_SECRET, sixMinAgo);
 		const res = await app.request("/webhook", {
 			method: "POST",

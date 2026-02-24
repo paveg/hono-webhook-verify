@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { standardWebhooks } from "../../src/providers/standard-webhooks.js";
+import { DEFAULT_TOLERANCE_S, EXPIRED_OFFSET_S } from "../helpers/constants.js";
 import { generateStandardWebhooksSignature } from "../helpers/signatures.js";
 
 // Generate a 32-byte key encoded as base64 for testing
@@ -144,9 +145,9 @@ describe("standard-webhooks provider", () => {
 		expect(result).toEqual({ valid: true });
 	});
 
-	it("T2: rejects expired timestamp", async () => {
-		const provider = standardWebhooks({ secret: SECRET, tolerance: 300 });
-		const pastTimestamp = Math.floor(Date.now() / 1000) - 360;
+	it("T2: rejects expired timestamp with default tolerance", async () => {
+		const provider = standardWebhooks({ secret: SECRET });
+		const pastTimestamp = Math.floor(Date.now() / 1000) - EXPIRED_OFFSET_S;
 		const { signature } = await generateStandardWebhooksSignature(
 			BODY,
 			SECRET_BASE64,
@@ -229,9 +230,50 @@ describe("standard-webhooks provider", () => {
 		);
 	});
 
+	it("accepts timestamp at exactly the tolerance boundary", async () => {
+		const provider = standardWebhooks({ secret: SECRET, tolerance: 60 });
+		const exactlyAtBoundary = Math.floor(Date.now() / 1000) - 60;
+		const { signature } = await generateStandardWebhooksSignature(
+			BODY,
+			SECRET_BASE64,
+			MSG_ID,
+			exactlyAtBoundary,
+		);
+		const result = await provider.verify({
+			rawBody: BODY,
+			headers: new Headers({
+				"webhook-id": MSG_ID,
+				"webhook-timestamp": String(exactlyAtBoundary),
+				"webhook-signature": signature,
+			}),
+		});
+		expect(result).toEqual({ valid: true });
+	});
+
+	it("rejects with tolerance: 0 when timestamp is 1 second off", async () => {
+		const provider = standardWebhooks({ secret: SECRET, tolerance: 0 });
+		const oneSecAgo = Math.floor(Date.now() / 1000) - 1;
+		const { signature } = await generateStandardWebhooksSignature(
+			BODY,
+			SECRET_BASE64,
+			MSG_ID,
+			oneSecAgo,
+		);
+		const result = await provider.verify({
+			rawBody: BODY,
+			headers: new Headers({
+				"webhook-id": MSG_ID,
+				"webhook-timestamp": String(oneSecAgo),
+				"webhook-signature": signature,
+			}),
+		});
+		expect(result).toEqual({ valid: false, reason: "timestamp-expired" });
+	});
+
 	it("rejects zero timestamp", async () => {
 		const provider = standardWebhooks({ secret: SECRET });
-		const { signature } = await generateStandardWebhooksSignature(BODY, SECRET_BASE64, MSG_ID);
+		// Generate signature for timestamp 0 to isolate the ts <= 0 guard
+		const { signature } = await generateStandardWebhooksSignature(BODY, SECRET_BASE64, MSG_ID, 0);
 		const result = await provider.verify({
 			rawBody: BODY,
 			headers: new Headers({
@@ -245,7 +287,13 @@ describe("standard-webhooks provider", () => {
 
 	it("rejects negative timestamp", async () => {
 		const provider = standardWebhooks({ secret: SECRET });
-		const { signature } = await generateStandardWebhooksSignature(BODY, SECRET_BASE64, MSG_ID);
+		// Generate signature for negative timestamp to isolate the ts <= 0 guard
+		const { signature } = await generateStandardWebhooksSignature(
+			BODY,
+			SECRET_BASE64,
+			MSG_ID,
+			-100,
+		);
 		const result = await provider.verify({
 			rawBody: BODY,
 			headers: new Headers({
@@ -269,6 +317,20 @@ describe("standard-webhooks provider", () => {
 			}),
 		});
 		expect(result).toEqual({ valid: false, reason: "missing-signature" });
+	});
+
+	it("rejects empty base64 after v1, prefix", async () => {
+		const provider = standardWebhooks({ secret: SECRET });
+		const { timestamp } = await generateStandardWebhooksSignature(BODY, SECRET_BASE64, MSG_ID);
+		const result = await provider.verify({
+			rawBody: BODY,
+			headers: new Headers({
+				"webhook-id": MSG_ID,
+				"webhook-timestamp": String(timestamp),
+				"webhook-signature": "v1,",
+			}),
+		});
+		expect(result).toEqual({ valid: false, reason: "invalid-signature" });
 	});
 
 	it("rejects signatures without v1 prefix", async () => {

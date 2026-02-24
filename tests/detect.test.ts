@@ -61,4 +61,13 @@ describe("detectProvider", () => {
 		const headers = new Headers();
 		expect(detectProvider(headers)).toBeNull();
 	});
+
+	it("returns first matching provider when multiple headers are present", () => {
+		// Stripe is first in the detector array, so it wins over GitHub
+		const headers = new Headers({
+			"Stripe-Signature": "t=123,v1=abc",
+			"X-Hub-Signature-256": "sha256=abc",
+		});
+		expect(detectProvider(headers)).toBe("stripe");
+	});
 });

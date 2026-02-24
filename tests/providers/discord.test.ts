@@ -1,4 +1,4 @@
-import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
+import { beforeAll, describe, expect, it, vi } from "vitest";
 import { discord } from "../../src/providers/discord.js";
 import { generateDiscordSignature, generateEd25519KeyPair } from "../helpers/signatures.js";
 
