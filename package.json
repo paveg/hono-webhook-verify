@@ -122,6 +122,10 @@
 		"slack",
 		"shopify",
 		"twilio",
+		"line",
+		"discord",
+		"standard-webhooks",
+		"svix",
 		"cloudflare-workers",
 		"edge"
 	],
