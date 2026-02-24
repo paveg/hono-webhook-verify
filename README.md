@@ -39,12 +39,14 @@ import { Hono } from "hono";
 import { webhookVerify } from "hono-webhook-verify";
 import { stripe } from "hono-webhook-verify/providers/stripe";
 
-const app = new Hono();
+import type { WebhookVerifyVariables } from "hono-webhook-verify";
+
+const app = new Hono<{ Variables: WebhookVerifyVariables }>();
 
 app.post(
   "/webhooks/stripe",
   webhookVerify({
-    provider: stripe({ secret: "whsec_..." }),
+    provider: stripe({ secret: process.env.STRIPE_WEBHOOK_SECRET! }),
   }),
   (c) => {
     const payload = c.get("webhookPayload");
@@ -198,21 +200,36 @@ By default, verification failures return a `401` response in [RFC 9457 Problem D
 
 ```json
 {
-  "type": "https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/401",
-  "title": "Unauthorized",
+  "type": "https://hono-webhook-verify.dev/errors/missing-signature",
+  "title": "Missing webhook signature",
   "status": 401,
-  "detail": "missing-signature"
+  "detail": "Required webhook signature header is missing"
 }
 ```
 
 Use the `onError` callback for custom error responses:
 
 ```ts
+// Logging
 webhookVerify({
-  provider: stripe({ secret: "whsec_..." }),
+  provider: stripe({ secret: process.env.STRIPE_WEBHOOK_SECRET! }),
   onError: (error, c) => {
-    console.error("Webhook verification failed:", error.detail);
+    console.error("Webhook verification failed:", error.title, error.detail);
     return c.json({ error: "Invalid webhook" }, 401);
+  },
+});
+```
+
+```ts
+// Skip verification in development
+webhookVerify({
+  provider: stripe({ secret: process.env.STRIPE_WEBHOOK_SECRET! }),
+  onError: (error, c) => {
+    if (process.env.NODE_ENV === "development") {
+      console.warn("Skipping webhook verification in development");
+      return; // falls through to handler
+    }
+    return c.json({ error: error.title }, error.status as 400 | 401);
   },
 });
 ```
@@ -227,6 +244,127 @@ import { detectProvider } from "hono-webhook-verify";
 const provider = detectProvider(request.headers);
 // => "stripe" | "github" | "slack" | "shopify" | "twilio" | "line" | "discord" | "standard-webhooks" | null
 ```
+
+### Multi-Provider Endpoint
+
+Handle multiple webhook providers on a single endpoint:
+
+```ts
+import { Hono } from "hono";
+import { detectProvider, webhookVerify } from "hono-webhook-verify";
+import type { WebhookVerifyVariables } from "hono-webhook-verify";
+import { github } from "hono-webhook-verify/providers/github";
+import { stripe } from "hono-webhook-verify/providers/stripe";
+
+const providers = {
+  stripe: stripe({ secret: process.env.STRIPE_WEBHOOK_SECRET! }),
+  github: github({ secret: process.env.GITHUB_WEBHOOK_SECRET! }),
+};
+
+const app = new Hono<{ Variables: WebhookVerifyVariables }>();
+
+app.post("/webhooks", async (c, next) => {
+  const name = detectProvider(c.req.raw.headers);
+  const provider = name ? providers[name as keyof typeof providers] : undefined;
+  if (!provider) {
+    return c.json({ error: "Unknown webhook provider" }, 400);
+  }
+  return webhookVerify({ provider })(c, next);
+}, (c) => {
+  const provider = c.get("webhookProvider");
+  const payload = c.get("webhookPayload");
+  console.log(`Received ${provider} webhook`);
+  return c.json({ received: true });
+});
+```
+
+## Runtime Examples
+
+### Cloudflare Workers
+
+```ts
+import { Hono } from "hono";
+import { webhookVerify } from "hono-webhook-verify";
+import type { WebhookVerifyVariables } from "hono-webhook-verify";
+import { stripe } from "hono-webhook-verify/providers/stripe";
+
+type Bindings = { STRIPE_WEBHOOK_SECRET: string };
+
+const app = new Hono<{ Bindings: Bindings; Variables: WebhookVerifyVariables }>();
+
+app.post("/webhooks/stripe", (c, next) => {
+  const middleware = webhookVerify({
+    provider: stripe({ secret: c.env.STRIPE_WEBHOOK_SECRET }),
+  });
+  return middleware(c, next);
+}, (c) => {
+  return c.json({ received: true });
+});
+
+export default app;
+```
+
+### Deno
+
+```ts
+import { Hono } from "npm:hono";
+import { webhookVerify } from "npm:hono-webhook-verify";
+import { github } from "npm:hono-webhook-verify/providers/github";
+
+const app = new Hono();
+
+app.post("/webhooks/github",
+  webhookVerify({
+    provider: github({ secret: Deno.env.get("GITHUB_WEBHOOK_SECRET")! }),
+  }),
+  (c) => c.json({ received: true }),
+);
+
+Deno.serve(app.fetch);
+```
+
+### Bun
+
+```ts
+import { Hono } from "hono";
+import { webhookVerify } from "hono-webhook-verify";
+import { github } from "hono-webhook-verify/providers/github";
+
+const app = new Hono();
+
+app.post("/webhooks/github",
+  webhookVerify({
+    provider: github({ secret: Bun.env.GITHUB_WEBHOOK_SECRET! }),
+  }),
+  (c) => c.json({ received: true }),
+);
+
+export default app;
+```
+
+## Troubleshooting
+
+### Signature verification fails
+
+- **Check the secret format**: Stripe uses `whsec_...` prefix. Standard Webhooks secrets are base64-encoded (with optional `whsec_` prefix). Discord requires a hex-encoded Ed25519 public key.
+- **Don't read the body before the middleware**: `webhookVerify` reads `c.req.text()` internally. If another middleware consumes the body first, verification will fail because the raw body won't match the signature.
+- **Environment variables**: Ensure your secret is loaded correctly. An extra newline or whitespace in `.env` can cause mismatches.
+
+### Timestamp expired
+
+- **Clock skew**: Ensure your server's clock is synchronized (NTP). Providers like Stripe, Slack, and Standard Webhooks include timestamps and reject if the difference exceeds the tolerance (default: 300 seconds).
+- **Increase tolerance**: If your processing pipeline has high latency, increase the `tolerance` option:
+  ```ts
+  stripe({ secret: "whsec_...", tolerance: 600 }) // 10 minutes
+  ```
+
+### Empty secret error
+
+All providers validate that the secret is non-empty at construction time. If you see `"<provider>: secret must not be empty"`, check that your environment variable is set and not undefined.
+
+### Twilio verification fails in production
+
+Twilio signs the full request URL including the protocol and host. Behind a reverse proxy, `c.req.url` may report `http://` instead of `https://`. Ensure your proxy sets the correct `X-Forwarded-Proto` header and your app reconstructs the correct URL.
 
 ## Security
 
