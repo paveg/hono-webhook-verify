@@ -1,7 +1,25 @@
 import { createMiddleware } from "hono/factory";
-import type { ContentfulStatusCode } from "hono/utils/http-status";
+import { getHonoProblemDetails } from "./compat.js";
 import { bodyReadFailed, invalidSignature, missingSignature, timestampExpired } from "./errors.js";
-import type { WebhookVerifyOptions, WebhookVerifyVariables } from "./types.js";
+import type { WebhookVerifyError, WebhookVerifyOptions, WebhookVerifyVariables } from "./types.js";
+
+async function errorResponse(error: WebhookVerifyError): Promise<Response> {
+	const pd = await getHonoProblemDetails();
+	if (pd) {
+		return pd
+			.problemDetails({
+				type: error.type,
+				title: error.title,
+				status: error.status,
+				detail: error.detail,
+			})
+			.getResponse();
+	}
+	return new Response(JSON.stringify(error), {
+		status: error.status,
+		headers: { "Content-Type": "application/problem+json" },
+	});
+}
 
 export function webhookVerify(options: WebhookVerifyOptions) {
 	const { provider, onError } = options;
@@ -13,7 +31,7 @@ export function webhookVerify(options: WebhookVerifyOptions) {
 		} catch {
 			const error = bodyReadFailed("Could not read the request body");
 			if (onError) return onError(error, c);
-			return c.json(error, 400);
+			return errorResponse(error);
 		}
 
 		const result = await provider.verify({
@@ -36,7 +54,7 @@ export function webhookVerify(options: WebhookVerifyOptions) {
 			const errorFn = errorFns[reason] ?? invalidSignature;
 			const error = errorFn(detailMessages[reason] ?? "Signature verification failed");
 			if (onError) return onError(error, c);
-			return c.json(error, error.status as ContentfulStatusCode);
+			return errorResponse(error);
 		}
 
 		c.set("webhookRawBody", rawBody);
