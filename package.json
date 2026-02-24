@@ -147,7 +147,13 @@
 		"node": ">=20"
 	},
 	"peerDependencies": {
-		"hono": ">=4.0.0"
+		"hono": ">=4.0.0",
+		"hono-problem-details": ">=0.1.0"
+	},
+	"peerDependenciesMeta": {
+		"hono-problem-details": {
+			"optional": true
+		}
 	},
 	"devDependencies": {
 		"@biomejs/biome": "^1.9.0",
