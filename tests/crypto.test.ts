@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { fromBase64, fromHex, hmac, timingSafeEqual, toBase64, toHex } from "../src/crypto.js";
 
 describe("hmac", () => {
@@ -22,6 +22,12 @@ describe("hmac", () => {
 	it("handles UTF-8 data", async () => {
 		const hex = toHex(await hmac("SHA-256", "secret", "こんにちは"));
 		expect(hex).toHaveLength(64);
+	});
+
+	it("accepts an ArrayBuffer secret", async () => {
+		const keyBytes = new TextEncoder().encode("secret").buffer;
+		const hex = toHex(await hmac("SHA-256", keyBytes as ArrayBuffer, "message"));
+		expect(hex).toBe("8b5f48702995c1598c573db1e21866a9b825d4a794d169d7060a03605796360b");
 	});
 });
 
@@ -137,7 +143,6 @@ describe("timingSafeEqual", () => {
 	it("delegates to crypto.subtle.timingSafeEqual when available", () => {
 		const originalSubtle = crypto.subtle;
 		const mockTimingSafeEqual = vi.fn(() => true);
-		// Patch subtle with the mock
 		Object.defineProperty(crypto, "subtle", {
 			value: { ...originalSubtle, timingSafeEqual: mockTimingSafeEqual },
 			configurable: true,
@@ -147,6 +152,31 @@ describe("timingSafeEqual", () => {
 			const b = new Uint8Array([1, 2]).buffer;
 			expect(timingSafeEqual(a, b)).toBe(true);
 			expect(mockTimingSafeEqual).toHaveBeenCalledWith(a, b);
+		} finally {
+			Object.defineProperty(crypto, "subtle", {
+				value: originalSubtle,
+				configurable: true,
+			});
+		}
+	});
+
+	it("falls back to XOR comparator when crypto.subtle.timingSafeEqual is absent", () => {
+		const originalSubtle = crypto.subtle;
+		// Remove timingSafeEqual from subtle to exercise the XOR fallback
+		const { ...subtleWithout } = originalSubtle as typeof originalSubtle & {
+			timingSafeEqual?: unknown;
+		};
+		subtleWithout.timingSafeEqual = undefined;
+		Object.defineProperty(crypto, "subtle", {
+			value: subtleWithout,
+			configurable: true,
+		});
+		try {
+			const a = new Uint8Array([0xaa, 0xbb]).buffer;
+			const b = new Uint8Array([0xaa, 0xbb]).buffer;
+			expect(timingSafeEqual(a, b)).toBe(true);
+			const c = new Uint8Array([0xaa, 0xbc]).buffer;
+			expect(timingSafeEqual(a, c)).toBe(false);
 		} finally {
 			Object.defineProperty(crypto, "subtle", {
 				value: originalSubtle,

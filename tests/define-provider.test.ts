@@ -1,6 +1,6 @@
 import { Hono } from "hono";
 import { describe, expect, it } from "vitest";
-import { hmac, timingSafeEqual, toHex } from "../src/crypto.js";
+import { fromHex, hmac, timingSafeEqual, toHex } from "../src/crypto.js";
 import { defineProvider } from "../src/define-provider.js";
 import { webhookVerify } from "../src/middleware.js";
 import type { WebhookVerifyVariables } from "../src/types.js";
@@ -14,21 +14,13 @@ const customProvider = defineProvider<{ secret: string }>((options) => ({
 			return { valid: false, reason: "missing-signature" };
 		}
 		const expected = await hmac("SHA-256", options.secret, rawBody);
-		if (!timingSafeEqual(expected, fromHexSimple(header))) {
+		const received = fromHex(header);
+		if (received === null || !timingSafeEqual(expected, received)) {
 			return { valid: false, reason: "invalid-signature" };
 		}
 		return { valid: true };
 	},
 }));
-
-// Minimal hex decoder for test
-function fromHexSimple(hex: string): ArrayBuffer {
-	const bytes = new Uint8Array(hex.length / 2);
-	for (let i = 0; i < bytes.length; i++) {
-		bytes[i] = Number.parseInt(hex.slice(i * 2, i * 2 + 2), 16);
-	}
-	return bytes.buffer;
-}
 
 const SECRET = "custom_secret";
 const BODY = '{"custom":"payload"}';
