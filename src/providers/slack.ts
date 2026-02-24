@@ -10,6 +10,10 @@ export interface SlackOptions {
 export function slack(options: SlackOptions): WebhookProvider {
 	const { signingSecret, tolerance = 300 } = options;
 
+	if (!signingSecret) {
+		throw new Error("slack: signingSecret must not be empty");
+	}
+
 	return {
 		name: "slack",
 		async verify({ rawBody, headers }) {

@@ -8,6 +8,10 @@ export interface TwilioOptions {
 export function twilio(options: TwilioOptions): WebhookProvider {
 	const { authToken } = options;
 
+	if (!authToken) {
+		throw new Error("twilio: authToken must not be empty");
+	}
+
 	return {
 		name: "twilio",
 		async verify({ rawBody, headers, url }) {

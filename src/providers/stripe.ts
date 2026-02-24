@@ -10,6 +10,10 @@ export interface StripeOptions {
 export function stripe(options: StripeOptions): WebhookProvider {
 	const { secret, tolerance = 300 } = options;
 
+	if (!secret) {
+		throw new Error("stripe: secret must not be empty");
+	}
+
 	return {
 		name: "stripe",
 		async verify({ rawBody, headers }) {

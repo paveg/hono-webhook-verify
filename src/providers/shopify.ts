@@ -8,6 +8,10 @@ export interface ShopifyOptions {
 export function shopify(options: ShopifyOptions): WebhookProvider {
 	const { secret } = options;
 
+	if (!secret) {
+		throw new Error("shopify: secret must not be empty");
+	}
+
 	return {
 		name: "shopify",
 		async verify({ rawBody, headers }) {

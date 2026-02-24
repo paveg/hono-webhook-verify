@@ -26,6 +26,10 @@ describe("line provider", () => {
 		expect(result).toEqual({ valid: false, reason: "invalid-signature" });
 	});
 
+	it("throws on empty channelSecret", () => {
+		expect(() => line({ channelSecret: "" })).toThrow("channelSecret must not be empty");
+	});
+
 	it("P3: rejects wrong secret", async () => {
 		const provider = line({ channelSecret: SECRET });
 		const signature = await generateLineSignature(BODY, "wrong_secret");
