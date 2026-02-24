@@ -5,29 +5,40 @@
 ```
 hono-webhook-verify/
 ├── src/
-│   ├── index.ts              # エントリポイント、re-export (webhookVerify, defineProvider)
-│   ├── middleware.ts          # createMiddleware() ベースのミドルウェア本体
-│   ├── crypto.ts             # Web Crypto API ラッパー（HMAC, timingSafeEqual）
-│   ├── types.ts              # 共通型定義
-│   ├── errors.ts             # RFC 9457 Problem Details エラー
+│   ├── index.ts              # Entry point, re-exports (webhookVerify, defineProvider)
+│   ├── middleware.ts          # createMiddleware()-based middleware core
+│   ├── crypto.ts             # Web Crypto API wrappers (HMAC, timingSafeEqual)
+│   ├── types.ts              # Shared type definitions
+│   ├── errors.ts             # RFC 9457 Problem Details errors
+│   ├── detect.ts             # Provider auto-detection from headers
 │   └── providers/
-│       ├── types.ts           # Provider インターフェース
+│       ├── types.ts           # Provider interface
 │       ├── stripe.ts
 │       ├── github.ts
 │       ├── slack.ts
 │       ├── shopify.ts
-│       └── twilio.ts
+│       ├── twilio.ts
+│       ├── line.ts
+│       ├── discord.ts
+│       └── standard-webhooks.ts
 ├── tests/
-│   ├── middleware.test.ts     # ミドルウェア統合テスト
+│   ├── middleware.test.ts     # Middleware integration tests
 │   ├── crypto.test.ts
+│   ├── detect.test.ts
+│   ├── define-provider.test.ts
+│   ├── errors.test.ts
 │   ├── providers/
 │   │   ├── stripe.test.ts
 │   │   ├── github.test.ts
 │   │   ├── slack.test.ts
 │   │   ├── shopify.test.ts
-│   │   └── twilio.test.ts
+│   │   ├── twilio.test.ts
+│   │   ├── line.test.ts
+│   │   ├── discord.test.ts
+│   │   └── standard-webhooks.test.ts
 │   └── helpers/
-│       └── signatures.ts     # テスト用署名生成ユーティリティ
+│       ├── signatures.ts     # Test signature generation utilities
+│       └── constants.ts      # Shared test constants
 ├── biome.json
 ├── tsconfig.json
 ├── package.json
@@ -36,39 +47,38 @@ hono-webhook-verify/
 
 ## Provider Interface
 
-hono-idempotency の Store インターフェースに相当する拡張ポイント。
-各プロバイダーの署名差異を吸収する。
+The extensibility point equivalent to the Store interface in hono-idempotency.
+Absorbs per-provider signature differences.
 
 ```ts
-/** プロバイダーの検証結果 */
+/** Provider verification result */
 interface VerifyResult {
   valid: boolean
-  reason?: string  // 失敗時の理由（エラーメッセージに使用）
+  reason?: string  // Failure reason (used for error messages)
 }
 
-/** プロバイダーの verify に渡されるコンテキスト */
+/** Context passed to provider's verify method */
 interface VerifyContext {
   rawBody: string
   headers: Headers
-  secret: string
-  url?: string       // Twilio 用（URL が署名対象に含まれるため）
+  url?: string       // For Twilio (URL is part of the signed content)
 }
 
-/** プロバイダー定義 */
+/** Webhook provider definition */
 interface WebhookProvider {
   name: string
   verify(ctx: VerifyContext): Promise<VerifyResult>
 }
 
-/** プロバイダーファクトリ関数の型 */
+/** Provider factory function type */
 type ProviderFactory<T> = (options: T) => WebhookProvider
 ```
 
-### なぜ Store パターンではなく Provider パターンか
+### Why Provider pattern, not Store pattern
 
-hono-idempotency はリクエスト間で**状態を保持**する必要がある → Store (get/lock/complete/delete)。
-hono-webhook-verify はリクエスト単体で**検証が完結**する → Provider (verify のみ)。
-状態管理がないため、インターフェースは意図的にシンプルに保つ。
+hono-idempotency needs to **maintain state** between requests → Store (get/lock/complete/delete).
+hono-webhook-verify **completes verification within a single request** → Provider (verify only).
+The interface is intentionally kept simple since there is no state management.
 
 ## Middleware Flow
 
@@ -76,9 +86,9 @@ hono-webhook-verify はリクエスト単体で**検証が完結**する → Pro
 Request (POST /webhook/stripe)
   │
   ├─ rawBody = await c.req.text()
-  │   └─ 読み取り失敗 → 400 Body Read Failed
+  │   └─ Read failure → 400 Body Read Failed
   │
-  ├─ provider.verify({ rawBody, headers, secret, url })
+  ├─ provider.verify({ rawBody, headers, url })
   │   ├─ { valid: true }
   │   │   ├─ c.set('webhookRawBody', rawBody)
   │   │   ├─ c.set('webhookPayload', JSON.parse(rawBody))  // try-catch
@@ -86,27 +96,27 @@ Request (POST /webhook/stripe)
   │   │   └─ next()
   │   │
   │   └─ { valid: false, reason }
-  │       └─ 401 (reason に応じて missing-signature / invalid-signature / timestamp-expired)
+  │       └─ 401 (mapped to missing-signature / invalid-signature / timestamp-expired)
   │
   └─ Response
 ```
 
-### hono-idempotency との比較
+### Comparison with hono-idempotency
 
-| 観点 | hono-idempotency | hono-webhook-verify |
-|-----|-----------------|-------------------|
-| フロー複雑度 | 高（lock → next → complete/delete） | 低（verify → next） |
-| 状態管理 | あり（Store） | なし |
-| エラー分岐 | 5パターン (400/409/422 + 2xx/error) | 3パターン (400/401) |
-| next() 後の処理 | レスポンスをキャプチャして保存 | なし |
+| Aspect | hono-idempotency | hono-webhook-verify |
+|--------|-----------------|-------------------|
+| Flow complexity | High (lock → next → complete/delete) | Low (verify → next) |
+| State management | Yes (Store) | None |
+| Error branches | 5 patterns (400/409/422 + 2xx/error) | 3 patterns (400/401) |
+| Post-next() processing | Captures and stores response | None |
 
 ## Design Decisions
 
-### Web Crypto API で HMAC 検証
+### HMAC Verification with Web Crypto API
 
-hono-idempotency のフィンガープリントと同じ判断:
-`crypto.subtle.importKey()` + `crypto.subtle.sign()` を使用。
-Node.js の `crypto.createHmac()` は使わない → Cloudflare Workers / Deno / Bun 互換。
+Same decision as hono-idempotency's fingerprinting:
+Uses `crypto.subtle.importKey()` + `crypto.subtle.sign()`.
+Does not use Node.js `crypto.createHmac()` → compatible with Cloudflare Workers / Deno / Bun.
 
 ```ts
 async function hmac(algorithm: 'SHA-256' | 'SHA-1', secret: string, data: string): Promise<ArrayBuffer> {
@@ -121,55 +131,60 @@ async function hmac(algorithm: 'SHA-256' | 'SHA-1', secret: string, data: string
 }
 ```
 
-### タイミングセーフ比較
+### Timing-Safe Comparison
 
-署名の比較は**定数時間**で行う。通常の `===` はサイドチャネル攻撃に脆弱。
+Signature comparison must be done in **constant time**. Regular `===` is vulnerable to side-channel attacks.
 
-Web Crypto API には `timingSafeEqual` がないため、自前実装が必要:
+Delegates to the runtime's native `crypto.subtle.timingSafeEqual` (Node.js >= 19, Deno,
+Cloudflare Workers). Falls back to a pure-JS XOR accumulator only as a last resort.
 
 ```ts
-function timingSafeEqual(a: string, b: string): boolean {
-  if (a.length !== b.length) return false
-  let result = 0
-  for (let i = 0; i < a.length; i++) {
-    result |= a.charCodeAt(i) ^ b.charCodeAt(i)
+function timingSafeEqual(a: ArrayBuffer, b: ArrayBuffer): boolean {
+  if (a.byteLength !== b.byteLength) return false
+  // Use native implementation when available
+  if (typeof crypto.subtle.timingSafeEqual === 'function') {
+    return crypto.subtle.timingSafeEqual(a, b)
   }
-  return result === 0
+  // XOR fallback
+  const viewA = new Uint8Array(a)
+  const viewB = new Uint8Array(b)
+  let diff = 0
+  for (let i = 0; i < viewA.length; i++) {
+    diff |= viewA[i] ^ viewB[i]
+  }
+  return diff === 0
 }
 ```
 
-Node.js 環境では `crypto.timingSafeEqual()` が使えるが、
-Edge 互換性のため Web Standards のみで実装する。
+### Raw Body Retrieval
 
-### Raw Body の取得
+The biggest pitfall in webhook signature verification:
+if a framework parses the body, the signature won't match.
 
-Webhook 署名検証の最大のハマりポイント。
-フレームワークが body をパースすると署名が合わなくなる。
+In Hono, `c.req.text()` retrieves the raw body, so this is not a problem.
+In Express, `express.raw()` was required — Hono's approach is a natural fit and a differentiation point.
 
-Hono では `c.req.text()` で raw body を取得できるため問題にならない。
-Express では `express.raw()` が必要だった箇所が、Hono では自然に動く → 差別化ポイント。
+However, **`c.req.text()` can only be called once**.
+The middleware stores the consumed raw body via `c.set('webhookRawBody', rawBody)`
+so downstream handlers can reuse it.
 
-ただし **`c.req.text()` は一度しか呼べない**。
-ミドルウェアで消費した raw body を `c.set('webhookRawBody', rawBody)` で
-コンテキストに保存し、後続ハンドラーが再利用できるようにする。
+### Twilio's Special Handling
 
-### Twilio の特殊処理
+Twilio differs fundamentally from other providers:
+- Algorithm: SHA-1 (others use SHA-256)
+- Signed content: URL + sorted POST parameters (others sign raw body)
 
-Twilio は他のプロバイダーと根本的に異なる:
-- アルゴリズム: SHA-1（他は SHA-256）
-- 署名対象: URL + ソート済み POST パラメータ（他は raw body）
+The `url` field in the Provider interface exists specifically for this.
+Only the Twilio provider uses `c.req.url` for signature verification.
 
-Provider インターフェースの `url` フィールドはこのために存在する。
-Twilio プロバイダーのみ `c.req.url` を使用して署名を検証する。
+### Error Response Granularity
 
-### エラーレスポンスの粒度
+The `reason` field classifies failure causes:
+- `missing-signature`: Header is absent → likely a configuration error
+- `invalid-signature`: Signature mismatch → wrong secret or tampering
+- `timestamp-expired`: Timestamp too old → replay attack or clock skew
 
-`reason` フィールドで失敗原因を分類:
-- `missing-signature`: ヘッダーが存在しない → 設定ミスの可能性
-- `invalid-signature`: 署名が不一致 → secret の不一致 or 改竄
-- `timestamp-expired`: タイムスタンプ期限切れ → リプレイ攻撃 or クロック差
-
-これにより開発者がデバッグしやすい。
+This makes debugging easier for developers.
 
 ## Package Configuration
 
@@ -183,19 +198,22 @@ Twilio プロバイダーのみ `c.req.url` を使用して署名を検証する
     "./providers/github": "./dist/providers/github.js",
     "./providers/slack": "./dist/providers/slack.js",
     "./providers/shopify": "./dist/providers/shopify.js",
-    "./providers/twilio": "./dist/providers/twilio.js"
+    "./providers/twilio": "./dist/providers/twilio.js",
+    "./providers/line": "./dist/providers/line.js",
+    "./providers/discord": "./dist/providers/discord.js",
+    "./providers/standard-webhooks": "./dist/providers/standard-webhooks.js"
   }
 }
 ```
 
-hono-idempotency と同じサブパスエクスポート戦略:
-- 使わないプロバイダーのコードをバンドルに含めない
-- プロバイダー追加が既存コードに影響しない
+Same subpath export strategy as hono-idempotency:
+- Unused providers are not included in the bundle
+- Adding new providers does not affect existing code
 
-### ビルド
+### Build
 
-- tsup でビルド（ESM + CJS dual output）
-- hono-idempotency と同一構成
+- Built with tsup (ESM + CJS dual output)
+- Same configuration as hono-idempotency
 
 ### peerDependencies
 

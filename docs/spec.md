@@ -1,24 +1,24 @@
 # Technical Specification
 
-## Provider 署名方式一覧
+## Provider Signature Methods
 
-各プロバイダーの署名方式を調査・整理した結果。これが Provider アダプタ設計の根拠。
+Survey of each provider's signature scheme. This is the basis for the Provider adapter design.
 
-| Provider | ヘッダー | アルゴリズム | エンコーディング | タイムスタンプ | 署名対象 | リプレイ防止 |
-|----------|---------|------------|----------------|-------------|---------|-------------|
-| **Stripe** | `Stripe-Signature` | HMAC-SHA256 | hex | `t=<ts>,v1=<sig>` 形式でヘッダーに含む | `{timestamp}.{rawBody}` | 5分 (default) |
-| **GitHub** | `X-Hub-Signature-256` | HMAC-SHA256 | hex (`sha256=` prefix) | なし | rawBody | なし |
-| **Slack** | `X-Slack-Signature` | HMAC-SHA256 | hex (`v0=` prefix) | `X-Slack-Request-Timestamp` | `v0:{timestamp}:{rawBody}` | 5分 |
-| **Shopify** | `X-Shopify-Hmac-Sha256` | HMAC-SHA256 | base64 | なし | rawBody | なし |
-| **Twilio** | `X-Twilio-Signature` | HMAC-**SHA1** | base64 | なし | URL + sorted POST params | なし |
+| Provider | Header | Algorithm | Encoding | Timestamp | Signed content | Replay prevention |
+|----------|--------|-----------|----------|-----------|---------------|-------------------|
+| **Stripe** | `Stripe-Signature` | HMAC-SHA256 | hex | `t=<ts>,v1=<sig>` format in header | `{timestamp}.{rawBody}` | 5 min (default) |
+| **GitHub** | `X-Hub-Signature-256` | HMAC-SHA256 | hex (`sha256=` prefix) | None | rawBody | None |
+| **Slack** | `X-Slack-Signature` | HMAC-SHA256 | hex (`v0=` prefix) | `X-Slack-Request-Timestamp` | `v0:{timestamp}:{rawBody}` | 5 min |
+| **Shopify** | `X-Shopify-Hmac-Sha256` | HMAC-SHA256 | base64 | None | rawBody | None |
+| **Twilio** | `X-Twilio-Signature` | HMAC-**SHA1** | base64 | None | URL + sorted POST params | None |
 
-### パターン分析
+### Pattern Analysis
 
-1. **アルゴリズム**: ほぼ全て HMAC-SHA256。Twilio のみ SHA-1
-2. **エンコーディング**: hex (Stripe/GitHub/Slack) と base64 (Shopify/Twilio) が混在
-3. **タイムスタンプ**: Stripe と Slack のみ。リプレイ攻撃防止に使用
-4. **署名フォーマット**: prefix (`sha256=`, `v0=`)、複合ヘッダー (`t=...,v1=...`)、plain と多様
-5. **Twilio の特殊性**: URL + ソート済み POST パラメータが署名対象。他と根本的に異なる
+1. **Algorithm**: Almost all use HMAC-SHA256. Twilio is the exception with SHA-1
+2. **Encoding**: Hex (Stripe/GitHub/Slack) and base64 (Shopify/Twilio) are mixed
+3. **Timestamp**: Only Stripe and Slack include timestamps for replay attack prevention
+4. **Signature format**: Diverse — prefix (`sha256=`, `v0=`), compound header (`t=...,v1=...`), and plain
+5. **Twilio's uniqueness**: Signs URL + sorted POST parameters instead of raw body
 
 ## Public API Design
 
@@ -34,12 +34,12 @@ const app = new Hono()
 app.post('/webhook/stripe', webhookVerify({
   provider: stripe({ secret: 'whsec_...' }),
 }), (c) => {
-  const payload = c.get('webhookPayload') // パース済みペイロード
+  const payload = c.get('webhookPayload') // Parsed payload
   // ...
 })
 ```
 
-### 各プロバイダー
+### Providers
 
 ```ts
 import { github } from 'hono-webhook-verify/providers/github'
@@ -74,17 +74,17 @@ app.post('/webhook/twilio', webhookVerify({
 webhookVerify({
   provider: stripe({
     secret: 'whsec_...',
-    tolerance: 300,         // タイムスタンプ許容差（秒）。default: 300 (5分)
+    tolerance: 300,         // Timestamp tolerance in seconds. Default: 300 (5 min)
   }),
-  onError: (error, c) => { // カスタムエラーハンドリング
+  onError: (error, c) => { // Custom error handling
     return c.json({ error: error.message }, 401)
   },
 })
 ```
 
-### カスタムプロバイダー
+### Custom Provider
 
-独自の Webhook 署名方式にも対応:
+Support for custom webhook signature schemes:
 
 ```ts
 import { webhookVerify, defineProvider } from 'hono-webhook-verify'
@@ -110,20 +110,20 @@ app.post('/webhook/custom', webhookVerify({
 
 ```ts
 app.post('/webhook/stripe', webhookVerify({ provider: stripe({ secret }) }), (c) => {
-  // 検証済みの raw body（文字列）
+  // Verified raw body (string)
   const rawBody = c.get('webhookRawBody')
 
-  // パース済み JSON（プロバイダーがJSONの場合）
+  // Parsed JSON (when the provider sends JSON)
   const payload = c.get('webhookPayload')
 
-  // プロバイダー名
+  // Provider name
   const provider = c.get('webhookProvider') // 'stripe'
 })
 ```
 
 ## Error Responses
 
-RFC 9457 Problem Details 形式（hono-idempotency と統一）:
+RFC 9457 Problem Details format (consistent with hono-idempotency):
 
 ```json
 {
@@ -134,15 +134,16 @@ RFC 9457 Problem Details 形式（hono-idempotency と統一）:
 }
 ```
 
-| エラー | status | type suffix |
+| Error | Status | Type suffix |
 |-------|--------|-------------|
-| 署名ヘッダー未指定 | 401 | `/errors/missing-signature` |
-| 署名不一致 | 401 | `/errors/invalid-signature` |
-| タイムスタンプ期限切れ | 401 | `/errors/timestamp-expired` |
-| リクエストボディ読み取り失敗 | 400 | `/errors/body-read-failed` |
+| Missing signature header | 401 | `/errors/missing-signature` |
+| Signature mismatch | 401 | `/errors/invalid-signature` |
+| Timestamp expired | 401 | `/errors/timestamp-expired` |
+| Body read failure | 400 | `/errors/body-read-failed` |
 
-### なぜ 403 ではなく 401 か
+### Why 401, not 403
 
-Webhook 署名検証の失敗は「認証の失敗」。送信元が本物のプロバイダーであることを
-証明できなかったことを意味する。403 は「認証済みだが権限不足」であり意味が異なる。
-Stripe, GitHub の公式ドキュメントも 401 系のレスポンスを推奨している。
+Webhook signature verification failure is an "authentication failure" — it means the sender
+could not prove they are the genuine provider. 403 means "authenticated but insufficient
+permissions", which has a different meaning. Stripe and GitHub official docs also recommend
+401-class responses.

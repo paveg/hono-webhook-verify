@@ -221,14 +221,11 @@ webhookVerify({
 ```
 
 ```ts
-// Skip verification in development
+// Custom error response with logging
 webhookVerify({
   provider: stripe({ secret: process.env.STRIPE_WEBHOOK_SECRET! }),
   onError: (error, c) => {
-    if (process.env.NODE_ENV === "development") {
-      console.warn("Skipping webhook verification in development");
-      return; // falls through to handler
-    }
+    console.error("Webhook verification failed:", error.detail);
     return c.json({ error: error.title }, error.status as 400 | 401);
   },
 });
