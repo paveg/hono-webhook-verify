@@ -14,6 +14,9 @@ export function discord(options: DiscordOptions): WebhookProvider {
 	if (!rawKey) {
 		throw new Error("discord: publicKey must be a valid hex string");
 	}
+	if (rawKey.byteLength !== 32) {
+		throw new Error("discord: publicKey must be 32 bytes (64 hex characters)");
+	}
 	// Store in a typed variable so TypeScript narrows across the closure.
 	const keyBytes: ArrayBuffer = rawKey;
 
