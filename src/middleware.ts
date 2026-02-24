@@ -24,12 +24,17 @@ export function webhookVerify(options: WebhookVerifyOptions) {
 
 		if (!result.valid) {
 			const reason = result.reason ?? "invalid-signature";
+			const detailMessages: Record<string, string> = {
+				"missing-signature": "Required webhook signature header is missing",
+				"invalid-signature": "Signature verification failed",
+				"timestamp-expired": "Webhook timestamp is outside the allowed tolerance",
+			};
 			const errorFns: Record<string, typeof invalidSignature> = {
 				"missing-signature": missingSignature,
 				"timestamp-expired": timestampExpired,
 			};
 			const errorFn = errorFns[reason] ?? invalidSignature;
-			const error = errorFn(result.reason ?? "Signature verification failed");
+			const error = errorFn(detailMessages[reason] ?? "Signature verification failed");
 			if (onError) return onError(error, c);
 			return c.json(error, error.status as ContentfulStatusCode);
 		}

@@ -109,7 +109,18 @@ describe("webhookVerify middleware", () => {
 		expect(await res.text()).toBe("github");
 	});
 
-	it("M8: custom onError returns custom response", async () => {
+	it("M8: error detail contains human-readable message, not reason code", async () => {
+		const app = createGitHubApp();
+		const res = await app.request("/webhook", {
+			method: "POST",
+			body: BODY,
+		});
+		const body = await res.json();
+		expect(body.detail).not.toBe("missing-signature");
+		expect(body.detail).toContain("missing");
+	});
+
+	it("M9: custom onError returns custom response", async () => {
 		const app = new Hono<{ Variables: WebhookVerifyVariables }>();
 		app.post(
 			"/webhook",
