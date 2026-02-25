@@ -333,6 +333,50 @@ describe("standard-webhooks provider", () => {
 		expect(result).toEqual({ valid: false, reason: "invalid-signature" });
 	});
 
+	it("rejects when valid signature is beyond the 10-signature limit", async () => {
+		const provider = standardWebhooks({ secret: SECRET });
+		const { signature, timestamp } = await generateStandardWebhooksSignature(
+			BODY,
+			SECRET_BASE64,
+			MSG_ID,
+		);
+		// 10 fake + 1 valid at position 11 — should be rejected (limit is 10)
+		const sigs = Array.from({ length: 10 }, (_, i) => `v1,fake${i}`)
+			.concat(signature)
+			.join(" ");
+		const result = await provider.verify({
+			rawBody: BODY,
+			headers: new Headers({
+				"webhook-id": MSG_ID,
+				"webhook-timestamp": String(timestamp),
+				"webhook-signature": sigs,
+			}),
+		});
+		expect(result).toEqual({ valid: false, reason: "invalid-signature" });
+	});
+
+	it("accepts valid signature at position 10 (within limit)", async () => {
+		const provider = standardWebhooks({ secret: SECRET });
+		const { signature, timestamp } = await generateStandardWebhooksSignature(
+			BODY,
+			SECRET_BASE64,
+			MSG_ID,
+		);
+		// 9 fake + 1 valid = 10 total (within limit)
+		const sigs = Array.from({ length: 9 }, (_, i) => `v1,fake${i}`)
+			.concat(signature)
+			.join(" ");
+		const result = await provider.verify({
+			rawBody: BODY,
+			headers: new Headers({
+				"webhook-id": MSG_ID,
+				"webhook-timestamp": String(timestamp),
+				"webhook-signature": sigs,
+			}),
+		});
+		expect(result).toEqual({ valid: true });
+	});
+
 	it("rejects signatures without v1 prefix", async () => {
 		const provider = standardWebhooks({ secret: SECRET });
 		const { timestamp } = await generateStandardWebhooksSignature(BODY, SECRET_BASE64, MSG_ID);

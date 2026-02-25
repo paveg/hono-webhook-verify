@@ -3,12 +3,14 @@ import type { WebhookProvider } from "./types.js";
 
 export interface DiscordOptions {
 	publicKey: string;
+	/** Timestamp tolerance in seconds. When set, rejects signatures with timestamps outside this window. */
+	tolerance?: number;
 }
 
 const encoder = new TextEncoder();
 
 export function discord(options: DiscordOptions): WebhookProvider {
-	const { publicKey } = options;
+	const { publicKey, tolerance } = options;
 
 	const rawKey = fromHex(publicKey);
 	if (!rawKey) {
@@ -37,6 +39,17 @@ export function discord(options: DiscordOptions): WebhookProvider {
 
 			if (!signature || !timestamp) {
 				return { valid: false, reason: "missing-signature" };
+			}
+
+			if (tolerance != null) {
+				const ts = Number(timestamp);
+				if (!Number.isFinite(ts) || ts <= 0) {
+					return { valid: false, reason: "missing-signature" };
+				}
+				const now = Math.floor(Date.now() / 1000);
+				if (Math.abs(now - ts) > tolerance) {
+					return { valid: false, reason: "timestamp-expired" };
+				}
 			}
 
 			const sigBytes = fromHex(signature);
