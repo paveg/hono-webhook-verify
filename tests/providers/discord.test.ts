@@ -181,6 +181,19 @@ describe("discord provider", () => {
 		expect(result).toEqual({ valid: true });
 	});
 
+	it("rejects non-numeric timestamp when tolerance is set", async () => {
+		const provider = discord({ publicKey: PUBLIC_KEY, tolerance: 300 });
+		const signature = await generateDiscordSignature(BODY, "not-a-number", PRIVATE_KEY);
+		const result = await provider.verify({
+			rawBody: BODY,
+			headers: new Headers({
+				"X-Signature-Ed25519": signature,
+				"X-Signature-Timestamp": "not-a-number",
+			}),
+		});
+		expect(result).toEqual({ valid: false, reason: "missing-signature" });
+	});
+
 	it("skips timestamp check when tolerance is not set", async () => {
 		const provider = discord({ publicKey: PUBLIC_KEY });
 		// Very old timestamp — should still pass when tolerance is not set
