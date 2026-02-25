@@ -1,5 +1,14 @@
 # hono-webhook-verify
 
+## 0.3.3
+
+### Patch Changes
+
+- [#95](https://github.com/paveg/hono-webhook-verify/pull/95) [`18f0fa1`](https://github.com/paveg/hono-webhook-verify/commit/18f0fa105631826aabbb79fdc2fc1ec6880a77fb) Thanks [@paveg](https://github.com/paveg)! - ### Bug Fixes
+
+  - Add `charset=utf-8` to fallback error response Content-Type for RFC 9457 consistency
+  - Update `hono-problem-details` devDependency to 0.1.4 (status validation, safe serialization fixes)
+
 ## 0.3.2
 
 ### Patch Changes
