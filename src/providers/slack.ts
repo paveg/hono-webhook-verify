@@ -36,9 +36,11 @@ export function slack(options: SlackOptions): WebhookProvider {
 			const sigBasestring = `v0:${timestamp}:${rawBody}`;
 			const expected = await hmac("SHA-256", signingSecret, sigBasestring);
 
-			// Slack sends "v0=<hex>". Strip the prefix, decode to raw bytes, and
-			// compare in the byte domain for native constant-time safety.
-			const receivedHex = signature.startsWith("v0=") ? signature.slice(3) : signature;
+			// Slack always sends "v0=<hex>" — reject if prefix is missing
+			if (!signature.startsWith("v0=")) {
+				return { valid: false, reason: "invalid-signature" };
+			}
+			const receivedHex = signature.slice(3);
 			const received = fromHex(receivedHex);
 			if (received === null || !timingSafeEqual(expected, received)) {
 				return { valid: false, reason: "invalid-signature" };

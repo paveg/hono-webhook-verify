@@ -39,8 +39,9 @@ export function standardWebhooks(options: StandardWebhooksOptions): WebhookProvi
 			const signedContent = `${msgId}.${timestamp}.${rawBody}`;
 			const expected = await hmac("SHA-256", keyBytes, signedContent);
 
-			// Support space-separated signatures for key rotation
-			const signatures = signatureHeader.split(" ");
+			// Support space-separated signatures for key rotation (limit to prevent DoS)
+			const MAX_SIGNATURES = 10;
+			const signatures = signatureHeader.split(" ").slice(0, MAX_SIGNATURES);
 			const matched = signatures.some((sig) => {
 				if (!sig.startsWith("v1,")) return false;
 				const received = fromBase64(sig.slice(3));

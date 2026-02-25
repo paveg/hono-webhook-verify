@@ -153,6 +153,48 @@ describe("discord provider", () => {
 		);
 	});
 
+	it("rejects expired timestamp when tolerance is set", async () => {
+		const provider = discord({ publicKey: PUBLIC_KEY, tolerance: 300 });
+		const expired = String(Math.floor(Date.now() / 1000) - 600);
+		const signature = await generateDiscordSignature(BODY, expired, PRIVATE_KEY);
+		const result = await provider.verify({
+			rawBody: BODY,
+			headers: new Headers({
+				"X-Signature-Ed25519": signature,
+				"X-Signature-Timestamp": expired,
+			}),
+		});
+		expect(result).toEqual({ valid: false, reason: "timestamp-expired" });
+	});
+
+	it("accepts valid timestamp within tolerance", async () => {
+		const provider = discord({ publicKey: PUBLIC_KEY, tolerance: 300 });
+		const recent = String(Math.floor(Date.now() / 1000) - 100);
+		const signature = await generateDiscordSignature(BODY, recent, PRIVATE_KEY);
+		const result = await provider.verify({
+			rawBody: BODY,
+			headers: new Headers({
+				"X-Signature-Ed25519": signature,
+				"X-Signature-Timestamp": recent,
+			}),
+		});
+		expect(result).toEqual({ valid: true });
+	});
+
+	it("skips timestamp check when tolerance is not set", async () => {
+		const provider = discord({ publicKey: PUBLIC_KEY });
+		// Very old timestamp — should still pass when tolerance is not set
+		const signature = await generateDiscordSignature(BODY, TIMESTAMP, PRIVATE_KEY);
+		const result = await provider.verify({
+			rawBody: BODY,
+			headers: new Headers({
+				"X-Signature-Ed25519": signature,
+				"X-Signature-Timestamp": TIMESTAMP,
+			}),
+		});
+		expect(result).toEqual({ valid: true });
+	});
+
 	it("returns invalid-signature when crypto.subtle.verify throws", async () => {
 		const provider = discord({ publicKey: PUBLIC_KEY });
 		const signature = await generateDiscordSignature(BODY, TIMESTAMP, PRIVATE_KEY);
