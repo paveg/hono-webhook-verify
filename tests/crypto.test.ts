@@ -56,6 +56,12 @@ describe("fromHex", () => {
 		expect(fromHex("zz")).toBeNull();
 	});
 
+	it("returns null for non-ASCII characters (charCode >= 128)", () => {
+		expect(fromHex("café")).toBeNull();
+		expect(fromHex("ff\u0080ff")).toBeNull();
+		expect(fromHex("\u00e9\u00e9")).toBeNull();
+	});
+
 	it("handles empty string", () => {
 		const buf = fromHex("") as ArrayBuffer;
 		expect(buf.byteLength).toBe(0);

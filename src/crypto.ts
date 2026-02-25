@@ -43,8 +43,11 @@ export function fromHex(hex: string): ArrayBuffer | null {
 	if (len % 2 !== 0) return null;
 	const bytes = new Uint8Array(len >>> 1);
 	for (let i = 0; i < len; i += 2) {
-		const hi = HEX_NIBBLE[hex.charCodeAt(i)];
-		const lo = HEX_NIBBLE[hex.charCodeAt(i + 1)];
+		const c1 = hex.charCodeAt(i);
+		const c2 = hex.charCodeAt(i + 1);
+		if (c1 >= 128 || c2 >= 128) return null;
+		const hi = HEX_NIBBLE[c1];
+		const lo = HEX_NIBBLE[c2];
 		if (hi === -1 || lo === -1) return null;
 		bytes[i >>> 1] = (hi << 4) | lo;
 	}
