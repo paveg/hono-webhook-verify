@@ -1,7 +1,10 @@
+/** Known verification failure reasons */
+export type VerifyFailureReason = "missing-signature" | "invalid-signature" | "timestamp-expired";
+
 /** Provider verification result */
 export interface VerifyResult {
 	valid: boolean;
-	reason?: string;
+	reason?: VerifyFailureReason;
 }
 
 /** Context passed to provider's verify method */

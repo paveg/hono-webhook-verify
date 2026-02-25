@@ -19,5 +19,6 @@ export type {
 	WebhookProvider,
 	ProviderFactory,
 	VerifyContext,
+	VerifyFailureReason,
 	VerifyResult,
 } from "./providers/types.js";

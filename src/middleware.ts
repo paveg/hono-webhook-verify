@@ -1,6 +1,7 @@
 import { createMiddleware } from "hono/factory";
 import { getHonoProblemDetails } from "./compat.js";
 import { bodyReadFailed, invalidSignature, missingSignature, timestampExpired } from "./errors.js";
+import type { VerifyFailureReason } from "./providers/types.js";
 import type { WebhookVerifyError, WebhookVerifyOptions, WebhookVerifyVariables } from "./types.js";
 
 async function errorResponse(error: WebhookVerifyError): Promise<Response> {
@@ -31,7 +32,7 @@ export function webhookVerify(options: WebhookVerifyOptions) {
 		} catch {
 			const error = bodyReadFailed("Could not read the request body");
 			if (onError) return onError(error, c);
-			return errorResponse(error);
+			return await errorResponse(error);
 		}
 
 		const result = await provider.verify({
@@ -41,20 +42,22 @@ export function webhookVerify(options: WebhookVerifyOptions) {
 		});
 
 		if (!result.valid) {
-			const reason = result.reason ?? "invalid-signature";
-			const detailMessages: Record<string, string> = {
+			const reason: VerifyFailureReason = result.reason ?? "invalid-signature";
+			const detailMessages: Record<VerifyFailureReason, string> = {
 				"missing-signature": "Required webhook signature header is missing",
 				"invalid-signature": "Signature verification failed",
 				"timestamp-expired": "Webhook timestamp is outside the allowed tolerance",
 			};
-			const errorFns: Record<string, typeof invalidSignature> = {
+			const errorFns: Record<VerifyFailureReason, typeof invalidSignature> = {
 				"missing-signature": missingSignature,
+				"invalid-signature": invalidSignature,
 				"timestamp-expired": timestampExpired,
 			};
+			// Fallback handles custom providers that may return non-standard reasons
 			const errorFn = errorFns[reason] ?? invalidSignature;
 			const error = errorFn(detailMessages[reason] ?? "Signature verification failed");
 			if (onError) return onError(error, c);
-			return errorResponse(error);
+			return await errorResponse(error);
 		}
 
 		c.set("webhookRawBody", rawBody);
