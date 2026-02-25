@@ -1,5 +1,11 @@
 # hono-webhook-verify
 
+## 0.3.1
+
+### Patch Changes
+
+- [#87](https://github.com/paveg/hono-webhook-verify/pull/87) [`397f7a1`](https://github.com/paveg/hono-webhook-verify/commit/397f7a1192380e4fae197be8280709f75ebca2ba) Thanks [@paveg](https://github.com/paveg)! - Security hardening: fix fromHex non-ASCII bounds check, require Slack v0= prefix, limit Standard Webhooks signature count, add Discord timestamp tolerance
+
 ## 0.3.0
 
 ### Minor Changes
