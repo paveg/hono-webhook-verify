@@ -219,6 +219,8 @@ By default, verification failures return a `401` response in [RFC 9457 Problem D
 }
 ```
 
+When [hono-problem-details](https://github.com/paveg/hono-problem-details) is installed, error responses are generated using its `problemDetails().getResponse()`. Otherwise, a built-in fallback is used. No configuration needed — detection is automatic.
+
 Use the `onError` callback for custom error responses:
 
 ```ts
