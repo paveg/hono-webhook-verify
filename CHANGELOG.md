@@ -1,5 +1,11 @@
 # hono-webhook-verify
 
+## 0.3.2
+
+### Patch Changes
+
+- [#92](https://github.com/paveg/hono-webhook-verify/pull/92) [`8ae2939`](https://github.com/paveg/hono-webhook-verify/commit/8ae2939425a0309cf17abf1534a8bae09e8fbc2d) Thanks [@paveg](https://github.com/paveg)! - Add type-safe error mapping with VerifyFailureReason, await errorResponse, Slack empty hex edge case test
+
 ## 0.3.1
 
 ### Patch Changes
