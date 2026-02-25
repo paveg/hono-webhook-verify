@@ -207,4 +207,17 @@ describe("slack provider", () => {
 		});
 		expect(result).toEqual({ valid: false, reason: "invalid-signature" });
 	});
+
+	it("rejects v0= prefix with empty hex", async () => {
+		const provider = slack({ signingSecret: SECRET });
+		const timestamp = Math.floor(Date.now() / 1000);
+		const result = await provider.verify({
+			rawBody: BODY,
+			headers: new Headers({
+				"X-Slack-Signature": "v0=",
+				"X-Slack-Request-Timestamp": String(timestamp),
+			}),
+		});
+		expect(result).toEqual({ valid: false, reason: "invalid-signature" });
+	});
 });
