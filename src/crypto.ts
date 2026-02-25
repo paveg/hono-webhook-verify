@@ -29,14 +29,24 @@ export function toHex(buffer: ArrayBuffer): string {
 	return hex;
 }
 
-/** Decode a lowercase hex string into an ArrayBuffer. Returns null for invalid input. */
+// charCode → nibble value; -1 for invalid characters
+const HEX_NIBBLE = new Int8Array(128).fill(-1);
+for (let i = 0; i < 10; i++) HEX_NIBBLE[0x30 + i] = i; // '0'-'9'
+for (let i = 0; i < 6; i++) {
+	HEX_NIBBLE[0x41 + i] = 10 + i; // 'A'-'F'
+	HEX_NIBBLE[0x61 + i] = 10 + i; // 'a'-'f'
+}
+
+/** Decode a hex string into an ArrayBuffer. Returns null for invalid input. */
 export function fromHex(hex: string): ArrayBuffer | null {
-	if (hex.length % 2 !== 0 || !/^[0-9a-f]*$/i.test(hex)) {
-		return null;
-	}
-	const bytes = new Uint8Array(hex.length / 2);
-	for (let i = 0; i < bytes.length; i++) {
-		bytes[i] = Number.parseInt(hex.slice(i * 2, i * 2 + 2), 16);
+	const len = hex.length;
+	if (len % 2 !== 0) return null;
+	const bytes = new Uint8Array(len >>> 1);
+	for (let i = 0; i < len; i += 2) {
+		const hi = HEX_NIBBLE[hex.charCodeAt(i)];
+		const lo = HEX_NIBBLE[hex.charCodeAt(i + 1)];
+		if (hi === -1 || lo === -1) return null;
+		bytes[i >>> 1] = (hi << 4) | lo;
 	}
 	return bytes.buffer;
 }
