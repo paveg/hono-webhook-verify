@@ -18,7 +18,7 @@ async function errorResponse(error: WebhookVerifyError): Promise<Response> {
 	}
 	return new Response(JSON.stringify(error), {
 		status: error.status,
-		headers: { "Content-Type": "application/problem+json" },
+		headers: { "Content-Type": "application/problem+json; charset=utf-8" },
 	});
 }
 

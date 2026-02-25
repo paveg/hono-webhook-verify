@@ -71,6 +71,6 @@ describe("middleware fallback when hono-problem-details is unavailable", () => {
 		expect(res.status).toBe(401);
 		const body = await res.json();
 		expect(body.title).toBe("Webhook signature verification failed");
-		expect(res.headers.get("Content-Type")).toContain("application/problem+json");
+		expect(res.headers.get("Content-Type")).toBe("application/problem+json; charset=utf-8");
 	});
 });

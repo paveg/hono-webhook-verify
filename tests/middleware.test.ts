@@ -211,7 +211,17 @@ describe("webhookVerify middleware", () => {
 		expect(body.detail).toBe("Signature verification failed");
 	});
 
-	it("M14: body read failure triggers onError callback", async () => {
+	it("M14: fallback error response includes charset=utf-8", async () => {
+		const app = createGitHubApp();
+		const res = await app.request("/webhook", {
+			method: "POST",
+			body: BODY,
+		});
+		expect(res.status).toBe(401);
+		expect(res.headers.get("Content-Type")).toBe("application/problem+json; charset=utf-8");
+	});
+
+	it("M15: body read failure triggers onError callback", async () => {
 		const app = new Hono<{ Variables: WebhookVerifyVariables }>();
 		app.post(
 			"/webhook",
