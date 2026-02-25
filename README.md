@@ -3,6 +3,8 @@
 [![npm version](https://img.shields.io/npm/v/hono-webhook-verify)](https://www.npmjs.com/package/hono-webhook-verify)
 [![CI](https://github.com/paveg/hono-webhook-verify/actions/workflows/ci.yml/badge.svg)](https://github.com/paveg/hono-webhook-verify/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![CodeRabbit Pull Request Reviews](https://img.shields.io/coderabbit/prs/github/paveg/hono-webhook-verify?utm_source=oss&utm_medium=github&utm_campaign=paveg%2Fhono-webhook-verify&labelColor=171717&color=FF570A&link=https%3A%2F%2Fcoderabbit.ai&label=CodeRabbit+Reviews)](https://coderabbit.ai)
+[![Devin Wiki](https://img.shields.io/badge/Devin-Wiki-blue)](https://app.devin.ai/org/ryota-ikezawa/wiki/paveg/hono-webhook-verify)
 
 Webhook signature verification middleware for [Hono](https://hono.dev). Verify webhooks from any provider with one line.
 
