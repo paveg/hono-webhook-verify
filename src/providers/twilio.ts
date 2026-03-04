@@ -26,7 +26,11 @@ export function twilio(options: TwilioOptions): WebhookProvider {
 
 			// Twilio signs: URL + sorted POST parameters
 			const params = new URLSearchParams(rawBody);
-			const entries = Array.from(params.entries()).sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0));
+			const entries: [string, string][] = [];
+			params.forEach((value, key) => {
+				entries.push([key, value]);
+			});
+			entries.sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0));
 			let dataToSign = url;
 			for (const [key, value] of entries) {
 				dataToSign += key + value;
