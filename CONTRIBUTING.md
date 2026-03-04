@@ -142,6 +142,24 @@ All four must pass before submitting your PR.
 5. Add a changeset: `pnpm changeset` — select the appropriate bump level
 6. Open a PR with a clear description
 
+## Release Flow
+
+```
+push to main
+└─ release.yml triggered
+   └─ changesets/action decides
+      │
+      ├─ .changeset/*.md exists
+      │  → Creates/updates a "Version Packages" PR
+      │    └─ ci-pass status auto-applied → ready to merge
+      │
+      └─ No .changeset/*.md (right after merging Version Packages PR)
+         → npm publish + GitHub Release created automatically
+```
+
+Contributors only need to **add a changeset and submit a PR**.
+Versioning and publishing are fully automated after merge.
+
 ## License
 
 By contributing, you agree that your contributions will be licensed under the [MIT License](LICENSE).
