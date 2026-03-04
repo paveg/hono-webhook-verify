@@ -1,4 +1,6 @@
+import { DEFAULT_TOLERANCE_S } from "../constants.js";
 import { fromHex, hmac, timingSafeEqual } from "../crypto.js";
+import { validateTimestamp } from "../timestamp.js";
 import type { WebhookProvider } from "./types.js";
 
 export interface SlackOptions {
@@ -8,7 +10,7 @@ export interface SlackOptions {
 }
 
 export function slack(options: SlackOptions): WebhookProvider {
-	const { signingSecret, tolerance = 300 } = options;
+	const { signingSecret, tolerance = DEFAULT_TOLERANCE_S } = options;
 
 	if (!signingSecret) {
 		throw new Error("slack: signingSecret must not be empty");
@@ -24,14 +26,8 @@ export function slack(options: SlackOptions): WebhookProvider {
 				return { valid: false, reason: "missing-signature" };
 			}
 
-			const ts = Number(timestamp);
-			if (!Number.isFinite(ts) || ts <= 0) {
-				return { valid: false, reason: "missing-signature" };
-			}
-			const now = Math.floor(Date.now() / 1000);
-			if (Math.abs(now - ts) > tolerance) {
-				return { valid: false, reason: "timestamp-expired" };
-			}
+			const tsError = validateTimestamp(timestamp, tolerance);
+			if (tsError) return tsError;
 
 			const sigBasestring = `v0:${timestamp}:${rawBody}`;
 			const expected = await hmac("SHA-256", signingSecret, sigBasestring);
@@ -40,7 +36,7 @@ export function slack(options: SlackOptions): WebhookProvider {
 			if (!signature.startsWith("v0=")) {
 				return { valid: false, reason: "invalid-signature" };
 			}
-			const receivedHex = signature.slice(3);
+			const receivedHex = signature.slice("v0=".length);
 			const received = fromHex(receivedHex);
 			if (received === null || !timingSafeEqual(expected, received)) {
 				return { valid: false, reason: "invalid-signature" };

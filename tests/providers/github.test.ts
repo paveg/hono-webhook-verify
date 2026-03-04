@@ -104,4 +104,13 @@ describe("github provider", () => {
 	it("throws when constructed with an empty secret", () => {
 		expect(() => github({ secret: "" })).toThrow("secret must not be empty");
 	});
+
+	it("rejects odd-length hex (sha256=abc)", async () => {
+		const provider = github({ secret: SECRET });
+		const result = await provider.verify({
+			rawBody: BODY,
+			headers: new Headers({ "X-Hub-Signature-256": "sha256=abc" }),
+		});
+		expect(result).toEqual({ valid: false, reason: "invalid-signature" });
+	});
 });

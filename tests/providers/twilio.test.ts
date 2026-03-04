@@ -115,4 +115,16 @@ describe("twilio provider", () => {
 		});
 		expect(result).toEqual({ valid: true });
 	});
+
+	it("rejects valid signature computed for a different URL", async () => {
+		const provider = twilio({ authToken: AUTH_TOKEN });
+		const otherUrl = "https://other.example.com/webhook";
+		const signature = await generateTwilioSignature(otherUrl, PARAMS, AUTH_TOKEN);
+		const result = await provider.verify({
+			rawBody: toUrlEncoded(PARAMS),
+			headers: new Headers({ "X-Twilio-Signature": signature }),
+			url: URL,
+		});
+		expect(result).toEqual({ valid: false, reason: "invalid-signature" });
+	});
 });

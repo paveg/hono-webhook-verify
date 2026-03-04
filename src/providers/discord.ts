@@ -1,4 +1,5 @@
 import { fromHex } from "../crypto.js";
+import { validateTimestamp } from "../timestamp.js";
 import type { WebhookProvider } from "./types.js";
 
 export interface DiscordOptions {
@@ -42,14 +43,8 @@ export function discord(options: DiscordOptions): WebhookProvider {
 			}
 
 			if (tolerance != null) {
-				const ts = Number(timestamp);
-				if (!Number.isFinite(ts) || ts <= 0) {
-					return { valid: false, reason: "missing-signature" };
-				}
-				const now = Math.floor(Date.now() / 1000);
-				if (Math.abs(now - ts) > tolerance) {
-					return { valid: false, reason: "timestamp-expired" };
-				}
+				const tsError = validateTimestamp(timestamp, tolerance);
+				if (tsError) return tsError;
 			}
 
 			const sigBytes = fromHex(signature);

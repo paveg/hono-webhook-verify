@@ -168,4 +168,40 @@ describe("stripe provider", () => {
 		});
 		expect(result).toEqual({ valid: false, reason: "missing-signature" });
 	});
+
+	it("rejects future timestamp beyond tolerance", async () => {
+		const provider = stripe({ secret: SECRET, tolerance: 60 });
+		const future = Math.floor(Date.now() / 1000) + 120;
+		const { header } = await generateStripeSignature(BODY, SECRET, future);
+		const result = await provider.verify({
+			rawBody: BODY,
+			headers: new Headers({ "Stripe-Signature": header }),
+		});
+		expect(result).toEqual({ valid: false, reason: "timestamp-expired" });
+	});
+
+	it("rejects header with v2= only (no v1= signatures)", async () => {
+		const provider = stripe({ secret: SECRET });
+		const ts = Math.floor(Date.now() / 1000);
+		const result = await provider.verify({
+			rawBody: BODY,
+			headers: new Headers({ "Stripe-Signature": `t=${ts},v2=somesig` }),
+		});
+		expect(result).toEqual({ valid: false, reason: "missing-signature" });
+	});
+
+	it("accepts when first v1 is wrong but second v1 is valid (key rotation)", async () => {
+		const provider = stripe({ secret: SECRET });
+		const { header } = await generateStripeSignature(BODY, SECRET);
+		// Extract t= and v1= from valid header, prepend a bad v1
+		const parts = header.split(",");
+		const tPart = parts[0]; // t=...
+		const validV1 = parts[1]; // v1=...
+		const rotatedHeader = `${tPart},v1=deadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef,${validV1}`;
+		const result = await provider.verify({
+			rawBody: BODY,
+			headers: new Headers({ "Stripe-Signature": rotatedHeader }),
+		});
+		expect(result).toEqual({ valid: true });
+	});
 });

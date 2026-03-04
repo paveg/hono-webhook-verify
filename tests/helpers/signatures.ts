@@ -7,11 +7,10 @@ export async function generateEd25519KeyPair(): Promise<{
 }> {
 	const keyPair = await crypto.subtle.generateKey("Ed25519", true, ["sign", "verify"]);
 	const rawPublicKey = await crypto.subtle.exportKey("raw", keyPair.publicKey);
-	const publicKeyHex = Array.from(new Uint8Array(rawPublicKey))
-		.map((b) => b.toString(16).padStart(2, "0"))
-		.join("");
-	return { publicKey: publicKeyHex, privateKey: keyPair.privateKey };
+	return { publicKey: toHex(rawPublicKey), privateKey: keyPair.privateKey };
 }
+
+const encoder = new TextEncoder();
 
 /** Generate a Discord interaction signature */
 export async function generateDiscordSignature(
@@ -19,12 +18,9 @@ export async function generateDiscordSignature(
 	timestamp: string,
 	privateKey: CryptoKey,
 ): Promise<string> {
-	const encoder = new TextEncoder();
 	const message = encoder.encode(timestamp + body);
 	const signature = await crypto.subtle.sign("Ed25519", privateKey, message);
-	return Array.from(new Uint8Array(signature))
-		.map((b) => b.toString(16).padStart(2, "0"))
-		.join("");
+	return toHex(signature);
 }
 
 export async function generateStripeSignature(

@@ -390,4 +390,24 @@ describe("standard-webhooks provider", () => {
 		});
 		expect(result).toEqual({ valid: false, reason: "invalid-signature" });
 	});
+
+	it("rejects future timestamp beyond tolerance", async () => {
+		const provider = standardWebhooks({ secret: SECRET, tolerance: 60 });
+		const future = Math.floor(Date.now() / 1000) + 120;
+		const { signature } = await generateStandardWebhooksSignature(
+			BODY,
+			SECRET_BASE64,
+			MSG_ID,
+			future,
+		);
+		const result = await provider.verify({
+			rawBody: BODY,
+			headers: new Headers({
+				"webhook-id": MSG_ID,
+				"webhook-timestamp": String(future),
+				"webhook-signature": signature,
+			}),
+		});
+		expect(result).toEqual({ valid: false, reason: "timestamp-expired" });
+	});
 });

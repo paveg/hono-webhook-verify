@@ -208,6 +208,34 @@ describe("discord provider", () => {
 		expect(result).toEqual({ valid: true });
 	});
 
+	it("rejects with tolerance: 0 when timestamp is 1 second ago", async () => {
+		const provider = discord({ publicKey: PUBLIC_KEY, tolerance: 0 });
+		const oneSecAgo = String(Math.floor(Date.now() / 1000) - 1);
+		const signature = await generateDiscordSignature(BODY, oneSecAgo, PRIVATE_KEY);
+		const result = await provider.verify({
+			rawBody: BODY,
+			headers: new Headers({
+				"X-Signature-Ed25519": signature,
+				"X-Signature-Timestamp": oneSecAgo,
+			}),
+		});
+		expect(result).toEqual({ valid: false, reason: "timestamp-expired" });
+	});
+
+	it("rejects future timestamp beyond tolerance", async () => {
+		const provider = discord({ publicKey: PUBLIC_KEY, tolerance: 60 });
+		const future = String(Math.floor(Date.now() / 1000) + 120);
+		const signature = await generateDiscordSignature(BODY, future, PRIVATE_KEY);
+		const result = await provider.verify({
+			rawBody: BODY,
+			headers: new Headers({
+				"X-Signature-Ed25519": signature,
+				"X-Signature-Timestamp": future,
+			}),
+		});
+		expect(result).toEqual({ valid: false, reason: "timestamp-expired" });
+	});
+
 	it("returns invalid-signature when crypto.subtle.verify throws", async () => {
 		const provider = discord({ publicKey: PUBLIC_KEY });
 		const signature = await generateDiscordSignature(BODY, TIMESTAMP, PRIVATE_KEY);
