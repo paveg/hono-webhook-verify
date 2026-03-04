@@ -57,11 +57,7 @@ export function fromHex(hex: string): ArrayBuffer | null {
 /** Convert ArrayBuffer to base64 string */
 export function toBase64(buffer: ArrayBuffer): string {
 	const bytes = new Uint8Array(buffer);
-	let binary = "";
-	for (const byte of bytes) {
-		binary += String.fromCharCode(byte);
-	}
-	return btoa(binary);
+	return btoa(String.fromCharCode(...bytes));
 }
 
 /** Decode a base64 string into an ArrayBuffer. Returns null for invalid input. */

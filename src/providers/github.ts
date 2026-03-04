@@ -29,7 +29,7 @@ export function github(options: GitHubOptions): WebhookProvider {
 				return { valid: false, reason: "invalid-signature" };
 			}
 
-			const received = fromHex(header.slice(7));
+			const received = fromHex(header.slice("sha256=".length));
 			if (!received) {
 				return { valid: false, reason: "invalid-signature" };
 			}

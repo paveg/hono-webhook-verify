@@ -1,4 +1,6 @@
+import { DEFAULT_TOLERANCE_S } from "../constants.js";
 import { fromHex, hmac, timingSafeEqual } from "../crypto.js";
+import { validateTimestamp } from "../timestamp.js";
 import type { WebhookProvider } from "./types.js";
 
 export interface StripeOptions {
@@ -8,7 +10,7 @@ export interface StripeOptions {
 }
 
 export function stripe(options: StripeOptions): WebhookProvider {
-	const { secret, tolerance = 300 } = options;
+	const { secret, tolerance = DEFAULT_TOLERANCE_S } = options;
 
 	if (!secret) {
 		throw new Error("stripe: secret must not be empty");
@@ -39,14 +41,8 @@ export function stripe(options: StripeOptions): WebhookProvider {
 				return { valid: false, reason: "missing-signature" };
 			}
 
-			const ts = Number(timestamp);
-			if (!Number.isFinite(ts) || ts <= 0) {
-				return { valid: false, reason: "missing-signature" };
-			}
-			const now = Math.floor(Date.now() / 1000);
-			if (Math.abs(now - ts) > tolerance) {
-				return { valid: false, reason: "timestamp-expired" };
-			}
+			const tsError = validateTimestamp(timestamp, tolerance);
+			if (tsError) return tsError;
 
 			const payload = `${timestamp}.${rawBody}`;
 			const expected = await hmac("SHA-256", secret, payload);

@@ -78,4 +78,13 @@ describe("line provider", () => {
 		});
 		expect(result).toEqual({ valid: false, reason: "invalid-signature" });
 	});
+
+	it("rejects valid base64 with wrong byte length (AAAA = 3 bytes)", async () => {
+		const provider = line({ channelSecret: SECRET });
+		const result = await provider.verify({
+			rawBody: BODY,
+			headers: new Headers({ "X-Line-Signature": "AAAA" }),
+		});
+		expect(result).toEqual({ valid: false, reason: "invalid-signature" });
+	});
 });

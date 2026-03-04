@@ -78,4 +78,13 @@ describe("shopify provider", () => {
 		});
 		expect(result).toEqual({ valid: false, reason: "invalid-signature" });
 	});
+
+	it("rejects valid base64 with wrong byte length (AAAA = 3 bytes)", async () => {
+		const provider = shopify({ secret: SECRET });
+		const result = await provider.verify({
+			rawBody: BODY,
+			headers: new Headers({ "X-Shopify-Hmac-Sha256": "AAAA" }),
+		});
+		expect(result).toEqual({ valid: false, reason: "invalid-signature" });
+	});
 });

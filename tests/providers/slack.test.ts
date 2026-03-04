@@ -220,4 +220,18 @@ describe("slack provider", () => {
 		});
 		expect(result).toEqual({ valid: false, reason: "invalid-signature" });
 	});
+
+	it("rejects future timestamp beyond tolerance", async () => {
+		const provider = slack({ signingSecret: SECRET, tolerance: 60 });
+		const future = Math.floor(Date.now() / 1000) + 120;
+		const { signature } = await generateSlackSignature(BODY, SECRET, future);
+		const result = await provider.verify({
+			rawBody: BODY,
+			headers: new Headers({
+				"X-Slack-Signature": signature,
+				"X-Slack-Request-Timestamp": String(future),
+			}),
+		});
+		expect(result).toEqual({ valid: false, reason: "timestamp-expired" });
+	});
 });
