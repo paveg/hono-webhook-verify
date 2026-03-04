@@ -1,5 +1,11 @@
 # hono-webhook-verify
 
+## 0.3.4
+
+### Patch Changes
+
+- [#97](https://github.com/paveg/hono-webhook-verify/pull/97) [`92555f5`](https://github.com/paveg/hono-webhook-verify/commit/92555f5145068bd2ff28e83dbf97979f96654848) Thanks [@paveg](https://github.com/paveg)! - Refactor: extract shared timestamp validation, replace magic numbers with named constants, add boundary value tests
+
 ## 0.3.3
 
 ### Patch Changes
