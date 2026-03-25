@@ -99,6 +99,18 @@
 		}
 	},
 	"sideEffects": false,
+	"typesVersions": {
+		"*": {
+			"providers/stripe": ["./dist/providers/stripe.d.ts"],
+			"providers/github": ["./dist/providers/github.d.ts"],
+			"providers/slack": ["./dist/providers/slack.d.ts"],
+			"providers/shopify": ["./dist/providers/shopify.d.ts"],
+			"providers/twilio": ["./dist/providers/twilio.d.ts"],
+			"providers/line": ["./dist/providers/line.d.ts"],
+			"providers/discord": ["./dist/providers/discord.d.ts"],
+			"providers/standard-webhooks": ["./dist/providers/standard-webhooks.d.ts"]
+		}
+	},
 	"files": ["dist"],
 	"scripts": {
 		"build": "tsup",
