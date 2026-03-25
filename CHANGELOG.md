@@ -1,5 +1,11 @@
 # hono-webhook-verify
 
+## 0.3.5
+
+### Patch Changes
+
+- [#102](https://github.com/paveg/hono-webhook-verify/pull/102) [`562479f`](https://github.com/paveg/hono-webhook-verify/commit/562479fc0f8f42da36825e2b314efa33b6b3b2ae) Thanks [@paveg](https://github.com/paveg)! - Add `typesVersions` field to support subpath imports with `moduleResolution: "node"`
+
 ## 0.3.4
 
 ### Patch Changes
