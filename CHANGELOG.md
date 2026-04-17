@@ -1,5 +1,11 @@
 # hono-webhook-verify
 
+## 0.3.6
+
+### Patch Changes
+
+- [#107](https://github.com/paveg/hono-webhook-verify/pull/107) [`060c0f7`](https://github.com/paveg/hono-webhook-verify/commit/060c0f7feb2f7e89e257351addf101919e9005b3) Thanks [@paveg](https://github.com/paveg)! - Refresh dev dependency lockfile to resolve Dependabot security alerts in `vite`, `picomatch`, and `minimatch`. No runtime or API changes — all affected packages are transitive dev dependencies.
+
 ## 0.3.5
 
 ### Patch Changes
