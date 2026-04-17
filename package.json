@@ -151,6 +151,7 @@
 		"url": "https://github.com/paveg/hono-webhook-verify/issues"
 	},
 	"license": "MIT",
+	"funding": "https://github.com/sponsors/paveg",
 	"publishConfig": {
 		"access": "public",
 		"provenance": true
