@@ -1,5 +1,16 @@
 # hono-webhook-verify
 
+## 0.3.7
+
+### Patch Changes
+
+- [#112](https://github.com/paveg/hono-webhook-verify/pull/112) [`8f61255`](https://github.com/paveg/hono-webhook-verify/commit/8f61255c7b7e5213f407a71d4d7cb93f1182913c) Thanks [@paveg](https://github.com/paveg)! - Documentation and metadata refresh:
+
+  - Document the `WebhookVerifyError` constructor helpers (`missingSignature`, `invalidSignature`, `timestampExpired`, `bodyReadFailed`) in the README's Error Handling section. These are public exports for users wrapping the middleware or building higher-level handlers.
+  - Add a `funding` field to `package.json` so npm and GitHub display the project's sponsor link.
+
+  No runtime or API changes — all exports and behavior are unchanged.
+
 ## 0.3.6
 
 ### Patch Changes
