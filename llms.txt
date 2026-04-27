@@ -1,0 +1,46 @@
+# hono-webhook-verify
+
+> Webhook signature verification middleware for Hono. Verify webhooks from Stripe, GitHub, Slack, Shopify, Twilio, LINE, Discord, and Standard Webhooks (svix-compatible) with one line. Works on Cloudflare Workers, Deno, Bun, Node.js, and any platform that supports the Web Crypto API.
+
+The middleware reads the raw request body once, runs constant-time signature verification through a provider adapter, then exposes the verified payload via Hono context variables (`webhookRawBody`, `webhookPayload`, `webhookProvider`). Verification failures return RFC 9457 Problem Details (auto-integrates with `hono-problem-details` when installed). Custom providers can be defined with `defineProvider()` plus the included crypto helpers.
+
+## Docs
+
+- [README](https://github.com/paveg/hono-webhook-verify/blob/main/README.md): Installation, quick start, per-provider examples, runtime guides (Cloudflare Workers / Deno / Bun), troubleshooting, and security notes.
+- [Architecture](https://github.com/paveg/hono-webhook-verify/blob/main/docs/architecture.md): Internal module layout and request lifecycle.
+- [Spec](https://github.com/paveg/hono-webhook-verify/blob/main/docs/spec.md): Behavioral specification for the middleware and provider contract.
+- [Overview](https://github.com/paveg/hono-webhook-verify/blob/main/docs/overview.md): Project goals and scope.
+- [Contributing](https://github.com/paveg/hono-webhook-verify/blob/main/CONTRIBUTING.md): Development workflow, commands (pnpm), and PR conventions.
+- [Security policy](https://github.com/paveg/hono-webhook-verify/blob/main/SECURITY.md): Vulnerability reporting and threat model.
+
+## API
+
+- [Public exports](https://github.com/paveg/hono-webhook-verify/blob/main/src/index.ts): Top-level barrel — `webhookVerify`, `defineProvider`, `detectProvider`, crypto helpers, and types.
+- [Middleware](https://github.com/paveg/hono-webhook-verify/blob/main/src/middleware.ts): `webhookVerify()` request handler.
+- [Provider factory](https://github.com/paveg/hono-webhook-verify/blob/main/src/define-provider.ts): `defineProvider()` for custom providers.
+- [Auto-detection](https://github.com/paveg/hono-webhook-verify/blob/main/src/detect.ts): `detectProvider()` infers the source from request headers.
+- [Crypto utilities](https://github.com/paveg/hono-webhook-verify/blob/main/src/crypto.ts): `hmac`, `toHex`, `fromHex`, `toBase64`, `fromBase64`, `timingSafeEqual`.
+- [Timestamp helpers](https://github.com/paveg/hono-webhook-verify/blob/main/src/timestamp.ts): Replay-window enforcement primitives used by Stripe / Slack / Standard Webhooks.
+- [Errors](https://github.com/paveg/hono-webhook-verify/blob/main/src/errors.ts): Error reasons and RFC 9457 Problem Details mapping.
+- [Types](https://github.com/paveg/hono-webhook-verify/blob/main/src/types.ts): `WebhookVerifyVariables`, provider and result types.
+- [Compatibility](https://github.com/paveg/hono-webhook-verify/blob/main/src/compat.ts): Optional `hono-problem-details` integration shim.
+
+## Providers
+
+- [Stripe](https://github.com/paveg/hono-webhook-verify/blob/main/src/providers/stripe.ts): HMAC-SHA256 with timestamp tolerance (`Stripe-Signature`).
+- [GitHub](https://github.com/paveg/hono-webhook-verify/blob/main/src/providers/github.ts): HMAC-SHA256 (`X-Hub-Signature-256`).
+- [Slack](https://github.com/paveg/hono-webhook-verify/blob/main/src/providers/slack.ts): HMAC-SHA256 with timestamp tolerance (`X-Slack-Signature`).
+- [Shopify](https://github.com/paveg/hono-webhook-verify/blob/main/src/providers/shopify.ts): HMAC-SHA256 base64 (`X-Shopify-Hmac-Sha256`).
+- [Twilio](https://github.com/paveg/hono-webhook-verify/blob/main/src/providers/twilio.ts): HMAC-SHA1 over URL plus form params (`X-Twilio-Signature`).
+- [LINE](https://github.com/paveg/hono-webhook-verify/blob/main/src/providers/line.ts): HMAC-SHA256 base64 (`X-Line-Signature`).
+- [Discord](https://github.com/paveg/hono-webhook-verify/blob/main/src/providers/discord.ts): Ed25519 asymmetric verification (`X-Signature-Ed25519`).
+- [Standard Webhooks](https://github.com/paveg/hono-webhook-verify/blob/main/src/providers/standard-webhooks.ts): svix-compatible HMAC-SHA256 (`webhook-signature`).
+- [Provider types](https://github.com/paveg/hono-webhook-verify/blob/main/src/providers/types.ts): Shared provider option and result shapes.
+
+## Optional
+
+- [CHANGELOG](https://github.com/paveg/hono-webhook-verify/blob/main/CHANGELOG.md): Release notes (managed via Changesets).
+- [npm package](https://www.npmjs.com/package/hono-webhook-verify): Published artifact and version index.
+- [Issue tracker](https://github.com/paveg/hono-webhook-verify/issues): Bug reports and feature requests.
+- [Hono documentation](https://hono.dev): Upstream framework this middleware targets.
+- [llms.txt specification](https://llmstxt.org): Format reference for this file.
