@@ -247,6 +247,29 @@ webhookVerify({
 });
 ```
 
+### Error Helpers
+
+When wrapping the middleware or building a higher-level handler, use these helpers to construct `WebhookVerifyError` objects matching the same Problem Details format:
+
+```ts
+import { invalidSignature } from "hono-webhook-verify";
+
+const error = invalidSignature("HMAC mismatch");
+// => {
+//   type: "https://hono-webhook-verify.dev/errors/invalid-signature",
+//   title: "Webhook signature verification failed",
+//   status: 401,
+//   detail: "HMAC mismatch",
+// }
+```
+
+| Helper | Status | Use when |
+|--------|--------|----------|
+| `missingSignature(detail)` | 401 | Required signature header is absent |
+| `invalidSignature(detail)` | 401 | HMAC / Ed25519 verification fails |
+| `timestampExpired(detail)` | 401 | Replay window exceeded |
+| `bodyReadFailed(detail)` | 400 | Request body could not be read |
+
 ## Provider Auto-Detection
 
 Use `detectProvider()` to identify the webhook source from request headers:
