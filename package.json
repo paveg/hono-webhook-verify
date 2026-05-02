@@ -178,7 +178,7 @@
 		"hono-problem-details": "0.1.4",
 		"lefthook": "2.1.1",
 		"tsup": "^8.0.0",
-		"typescript": "^5.7.0",
+		"typescript": "^6.0.3",
 		"vitest": "^3.0.0"
 	},
 	"packageManager": "pnpm@10.14.0",
