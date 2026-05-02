@@ -1,5 +1,11 @@
 # hono-webhook-verify
 
+## 0.3.8
+
+### Patch Changes
+
+- [#115](https://github.com/paveg/hono-webhook-verify/pull/115) [`40138b9`](https://github.com/paveg/hono-webhook-verify/commit/40138b99a2a752b06ef04db6b21ee1bcef68de66) Thanks [@paveg](https://github.com/paveg)! - Refresh `postcss` (transitive dev dependency via `tsup`) from 8.5.6 to 8.5.13 to resolve Dependabot alert GHSA-qx2v-qp2m-jg93 / CVE-2026-41305 (XSS via unescaped `</style>` in CSS stringify output). No runtime or API changes — `postcss` is only used at build time and is not part of the published package.
+
 ## 0.3.7
 
 ### Patch Changes
