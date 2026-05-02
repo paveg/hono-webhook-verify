@@ -17,9 +17,9 @@ jobs:
   release:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v6
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v6
         with:
           # Node 24 ships with npm 11.x (required for OIDC Trusted Publishing).
           # Node 22 ships with npm 10.x and self-upgrading via 'npm install -g npm@latest' is unreliable in CI.
