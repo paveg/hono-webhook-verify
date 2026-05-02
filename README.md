@@ -24,6 +24,12 @@ Works on Cloudflare Workers, Deno, Bun, Node.js, and any platform that supports 
 | **Standard Webhooks** | `webhook-signature` | HMAC-SHA256 (svix-compatible) |
 | **Custom** | Any | `defineProvider()` |
 
+## Requirements
+
+- **Node.js**: `>= 22` (Node 20 reached EOL on 2026-04-30). Also runs on Cloudflare Workers, Deno, and Bun.
+- **TypeScript**: `>= 5.0` — verified in CI against TS 5.0 / 5.4 / 5.7 / 5.9 to guard the published `.d.ts` against silent breakage.
+- **Hono**: `>= 4.0`
+
 ## Installation
 
 ```bash
