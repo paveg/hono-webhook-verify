@@ -176,7 +176,7 @@
 		"@vitest/coverage-v8": "^4.1.8",
 		"hono": "^4.7.0",
 		"hono-problem-details": "0.1.4",
-		"lefthook": "2.1.1",
+		"lefthook": "2.1.9",
 		"tsup": "^8.0.0",
 		"typescript": "^6.0.3",
 		"vitest": "^4.1.8"
