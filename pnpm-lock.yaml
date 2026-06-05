@@ -24,8 +24,8 @@ importers:
         specifier: ^4.7.0
         version: 4.12.23
       hono-problem-details:
-        specifier: 0.1.4
-        version: 0.1.4(hono@4.12.23)
+        specifier: 0.8.1
+        version: 0.8.1(@standard-schema/spec@1.1.0)(hono@4.12.23)
       lefthook:
         specifier: 2.1.1
         version: 2.1.1
@@ -1045,18 +1045,19 @@ packages:
     resolution: {integrity: sha512-EykJT/Q1KjTWctppgIAgfSO0tKVuZUjhgMr17kqTumMl6Afv3EISleU7qZUzoXDFTAHTDC4NOoG/ZxU3EvlMPQ==}
     engines: {node: '>=8'}
 
-  hono-problem-details@0.1.4:
-    resolution: {integrity: sha512-AbBL2xgi8GdHi/2pPUURLQV7zaZBkuvLFk6t7Mi8aFA+EvONsNpdLd5oC3rIQGQt3rrfTDdswgAz+77WrY+MZQ==}
-    engines: {node: '>=20'}
+  hono-problem-details@0.8.1:
+    resolution: {integrity: sha512-JT23lA8mtRK4FfyW239pS3xc689R0XLTACXwAQhOqr1uU9DqK0SyOs5JxzgQ13mkqGlNgYocbXyXLu2b/kxFQA==}
+    engines: {node: '>=22'}
     peerDependencies:
-      '@hono/standard-validator': '*'
-      '@hono/valibot-validator': '*'
-      '@hono/zod-openapi': '*'
-      '@hono/zod-validator': '*'
-      '@standard-schema/spec': '*'
-      hono: '>=4.0.0'
-      valibot: '*'
-      zod: '*'
+      '@hono/standard-validator': ^0.2.0
+      '@hono/valibot-validator': ^0.6.0
+      '@hono/zod-openapi': ^1.0.0
+      '@hono/zod-validator': ^0.7.5
+      '@opentelemetry/api': ^1.0.0
+      '@standard-schema/spec': ^1.0.0
+      hono: '>=4.12.14'
+      valibot: ^1.0.0
+      zod: ^3.25.0 || ^4.0.0
     peerDependenciesMeta:
       '@hono/standard-validator':
         optional: true
@@ -1065,6 +1066,8 @@ packages:
       '@hono/zod-openapi':
         optional: true
       '@hono/zod-validator':
+        optional: true
+      '@opentelemetry/api':
         optional: true
       '@standard-schema/spec':
         optional: true
@@ -2494,9 +2497,11 @@ snapshots:
 
   has-flag@4.0.0: {}
 
-  hono-problem-details@0.1.4(hono@4.12.23):
+  hono-problem-details@0.8.1(@standard-schema/spec@1.1.0)(hono@4.12.23):
     dependencies:
       hono: 4.12.23
+    optionalDependencies:
+      '@standard-schema/spec': 1.1.0
 
   hono@4.12.23: {}
 
