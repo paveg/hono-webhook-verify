@@ -17,3 +17,14 @@ updates:
         patterns:
           - "vitest"
           - "@vitest/*"
+      dev-dependencies:
+        dependency-type: "development"
+        update-types:
+          - "minor"
+          - "patch"
+    ignore:
+      # hono is a peerDependency (and dev dependency for local testing); major
+      # bumps require coordinated review against the peerDependency range in
+      # package.json rather than an automatic Dependabot PR.
+      - dependency-name: "hono"
+        update-types: ["version-update:semver-major"]
