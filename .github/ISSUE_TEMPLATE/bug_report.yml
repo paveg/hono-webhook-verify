@@ -1,0 +1,57 @@
+name: Bug report
+description: Report a defect in hono-webhook-verify
+labels: [bug]
+body:
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: Brief description of the issue.
+    validations:
+      required: true
+  - type: dropdown
+    id: provider
+    attributes:
+      label: Webhook provider
+      description: Which provider is involved?
+      options:
+        - Stripe
+        - GitHub
+        - Slack
+        - Shopify
+        - Twilio
+        - LINE
+        - Discord
+        - Standard Webhooks
+        - Custom provider
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Reproduction
+      description: Minimal steps or code to reproduce.
+      placeholder: |
+        ```ts
+        // ...
+        ```
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Package version
+      placeholder: "0.0.0"
+    validations:
+      required: true
+  - type: input
+    id: runtime
+    attributes:
+      label: Runtime
+      placeholder: "Node 22.4.0 / Cloudflare Workers / Bun 1.1 / Deno 2.0"
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected vs actual
