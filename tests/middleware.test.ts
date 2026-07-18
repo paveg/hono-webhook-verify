@@ -1,6 +1,6 @@
 import type { Context } from "hono";
 import { Hono } from "hono";
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 import { webhookVerify } from "../src/middleware.js";
 import { github } from "../src/providers/github.js";
 import { stripe } from "../src/providers/stripe.js";

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { standardWebhooks } from "../../src/providers/standard-webhooks.js";
-import { DEFAULT_TOLERANCE_S, EXPIRED_OFFSET_S } from "../helpers/constants.js";
+import { EXPIRED_OFFSET_S } from "../helpers/constants.js";
 import { generateStandardWebhooksSignature } from "../helpers/signatures.js";
 
 // Generate a 32-byte key encoded as base64 for testing
