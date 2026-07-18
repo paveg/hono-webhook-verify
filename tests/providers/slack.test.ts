@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { slack } from "../../src/providers/slack.js";
-import { DEFAULT_TOLERANCE_S, EXPIRED_OFFSET_S } from "../helpers/constants.js";
+import { EXPIRED_OFFSET_S } from "../helpers/constants.js";
 import { generateSlackSignature } from "../helpers/signatures.js";
 
 const SECRET = "slack_signing_secret";

@@ -101,17 +101,35 @@
 	"sideEffects": false,
 	"typesVersions": {
 		"*": {
-			"providers/stripe": ["./dist/providers/stripe.d.ts"],
-			"providers/github": ["./dist/providers/github.d.ts"],
-			"providers/slack": ["./dist/providers/slack.d.ts"],
-			"providers/shopify": ["./dist/providers/shopify.d.ts"],
-			"providers/twilio": ["./dist/providers/twilio.d.ts"],
-			"providers/line": ["./dist/providers/line.d.ts"],
-			"providers/discord": ["./dist/providers/discord.d.ts"],
-			"providers/standard-webhooks": ["./dist/providers/standard-webhooks.d.ts"]
+			"providers/stripe": [
+				"./dist/providers/stripe.d.ts"
+			],
+			"providers/github": [
+				"./dist/providers/github.d.ts"
+			],
+			"providers/slack": [
+				"./dist/providers/slack.d.ts"
+			],
+			"providers/shopify": [
+				"./dist/providers/shopify.d.ts"
+			],
+			"providers/twilio": [
+				"./dist/providers/twilio.d.ts"
+			],
+			"providers/line": [
+				"./dist/providers/line.d.ts"
+			],
+			"providers/discord": [
+				"./dist/providers/discord.d.ts"
+			],
+			"providers/standard-webhooks": [
+				"./dist/providers/standard-webhooks.d.ts"
+			]
 		}
 	},
-	"files": ["dist"],
+	"files": [
+		"dist"
+	],
 	"scripts": {
 		"build": "tsup",
 		"test": "vitest run",
@@ -170,7 +188,7 @@
 		}
 	},
 	"devDependencies": {
-		"@biomejs/biome": "^1.9.0",
+		"@biomejs/biome": "^2.5.4",
 		"@changesets/changelog-github": "0.7.0",
 		"@changesets/cli": "2.29.8",
 		"@vitest/coverage-v8": "^4.1.8",
@@ -183,7 +201,11 @@
 	},
 	"packageManager": "pnpm@10.14.0",
 	"pnpm": {
-		"onlyBuiltDependencies": ["@biomejs/biome", "esbuild", "lefthook"],
+		"onlyBuiltDependencies": [
+			"@biomejs/biome",
+			"esbuild",
+			"lefthook"
+		],
 		"overrides": {
 			"vite@<7.3.5": "^7.3.5",
 			"esbuild@<0.28.1": "^0.28.1",
