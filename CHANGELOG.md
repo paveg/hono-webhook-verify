@@ -1,5 +1,11 @@
 # hono-webhook-verify
 
+## 0.4.1
+
+### Patch Changes
+
+- [#153](https://github.com/paveg/hono-webhook-verify/pull/153) [`2fe7fda`](https://github.com/paveg/hono-webhook-verify/commit/2fe7fda618892b80d1610c234ae8c2c2c11e0ff2) Thanks [@paveg](https://github.com/paveg)! - Internal cleanup from the Biome 2 migration: removed unused test imports, reordered module exports, and excluded local editor state from lint. No behavioral change, but bundle module ordering in `dist` differs from the previous release.
+
 ## 0.4.0
 
 ### Minor Changes
