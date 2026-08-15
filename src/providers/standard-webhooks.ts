@@ -56,7 +56,15 @@ export async function signStandardWebhook(
 	if (secrets.length === 0) {
 		throw new Error("standard-webhooks: signStandardWebhook requires `secret` or `secrets`");
 	}
+	if (secrets.length > MAX_SIGNATURES) {
+		throw new Error(
+			`standard-webhooks: signStandardWebhook supports at most ${MAX_SIGNATURES} secrets`,
+		);
+	}
 	const timestamp = options.timestamp ?? Math.floor(Date.now() / 1000);
+	if (!Number.isSafeInteger(timestamp)) {
+		throw new Error("standard-webhooks: timestamp must be an integer number of seconds");
+	}
 	const signedContent = `${options.id}.${timestamp}.${options.body}`;
 
 	const signatures = await Promise.all(

@@ -512,4 +512,50 @@ describe("signStandardWebhook", () => {
 			signStandardWebhook({ secret: "!!invalid!!", id: MSG_ID, body: BODY }),
 		).rejects.toThrow("secret must be valid base64");
 	});
+
+	it("S9: throws when secrets exceeds the verifier's 10-signature limit", async () => {
+		const secrets = Array.from({ length: 11 }, () => SECRET);
+		await expect(
+			signStandardWebhook({ secrets, id: MSG_ID, timestamp: FIXED_TIMESTAMP, body: BODY }),
+		).rejects.toThrow("supports at most 10 secrets");
+	});
+
+	it("S10: accepts exactly 10 secrets (at the verifier's limit)", async () => {
+		const secrets = Array.from({ length: 10 }, () => SECRET);
+		const headers = await signStandardWebhook({
+			secrets,
+			id: MSG_ID,
+			timestamp: FIXED_TIMESTAMP,
+			body: BODY,
+		});
+		expect(headers["webhook-signature"].split(" ")).toHaveLength(10);
+	});
+
+	it("S11: throws on a fractional timestamp", async () => {
+		await expect(
+			signStandardWebhook({ secret: SECRET, id: MSG_ID, timestamp: 1755300000.5, body: BODY }),
+		).rejects.toThrow("timestamp must be an integer number of seconds");
+	});
+
+	it("S12: throws on a non-finite timestamp", async () => {
+		await expect(
+			signStandardWebhook({
+				secret: SECRET,
+				id: MSG_ID,
+				timestamp: Number.POSITIVE_INFINITY,
+				body: BODY,
+			}),
+		).rejects.toThrow("timestamp must be an integer number of seconds");
+	});
+
+	it("S13: throws on an unsafe-integer timestamp", async () => {
+		await expect(
+			signStandardWebhook({
+				secret: SECRET,
+				id: MSG_ID,
+				timestamp: Number.MAX_SAFE_INTEGER + 1,
+				body: BODY,
+			}),
+		).rejects.toThrow("timestamp must be an integer number of seconds");
+	});
 });
