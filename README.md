@@ -158,6 +158,27 @@ webhookVerify({
 });
 ```
 
+To send your own Standard Webhooks-formatted webhooks, `signStandardWebhook()` mirrors
+the provider's verification logic and produces the headers a receiver expects:
+
+```ts
+import { signStandardWebhook } from "hono-webhook-verify/providers/standard-webhooks";
+
+const headers = await signStandardWebhook({
+  secret: "whsec_...", // same handling as standardWebhooks(): optional whsec_ prefix
+  id: "msg_01j...",
+  timestamp: 1755300000, // optional, seconds; defaults to Math.floor(Date.now() / 1000)
+  body: rawBodyString,
+});
+// => { "webhook-id": "msg_01j...", "webhook-timestamp": "1755300000", "webhook-signature": "v1,..." }
+
+await fetch(destinationUrl, { method: "POST", headers, body: rawBodyString });
+```
+
+Pass `secrets: string[]` instead of `secret` to sign with multiple secrets for key
+rotation — one `v1,` signature is emitted per secret, space-separated, matching the
+format `standardWebhooks()` already accepts on the receiving end.
+
 ### Custom Provider
 
 Use `defineProvider()` with the built-in crypto utilities to create a provider for any webhook source:

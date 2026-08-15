@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { standardWebhooks } from "../../src/providers/standard-webhooks.js";
+import { signStandardWebhook, standardWebhooks } from "../../src/providers/standard-webhooks.js";
 import { EXPIRED_OFFSET_S } from "../helpers/constants.js";
 import { generateStandardWebhooksSignature } from "../helpers/signatures.js";
 
@@ -409,5 +409,107 @@ describe("standard-webhooks provider", () => {
 			}),
 		});
 		expect(result).toEqual({ valid: false, reason: "timestamp-expired" });
+	});
+});
+
+describe("signStandardWebhook", () => {
+	const FIXED_TIMESTAMP = Math.floor(Date.now() / 1000);
+
+	it("S1: round-trips through standardWebhooks().verify()", async () => {
+		const headers = await signStandardWebhook({
+			secret: SECRET,
+			id: MSG_ID,
+			timestamp: FIXED_TIMESTAMP,
+			body: BODY,
+		});
+		expect(headers).toEqual({
+			"webhook-id": MSG_ID,
+			"webhook-timestamp": String(FIXED_TIMESTAMP),
+			"webhook-signature": expect.stringMatching(/^v1,/),
+		});
+
+		const provider = standardWebhooks({ secret: SECRET });
+		const result = await provider.verify({
+			rawBody: BODY,
+			headers: new Headers(headers),
+		});
+		expect(result).toEqual({ valid: true });
+	});
+
+	it("S2: defaults timestamp to the current time in seconds", async () => {
+		const before = Math.floor(Date.now() / 1000);
+		const headers = await signStandardWebhook({ secret: SECRET, id: MSG_ID, body: BODY });
+		const after = Math.floor(Date.now() / 1000);
+		const timestamp = Number(headers["webhook-timestamp"]);
+		expect(timestamp).toBeGreaterThanOrEqual(before);
+		expect(timestamp).toBeLessThanOrEqual(after);
+	});
+
+	it("S3: strips the whsec_ prefix like the verifier", async () => {
+		const headers = await signStandardWebhook({
+			secret: SECRET_BASE64,
+			id: MSG_ID,
+			timestamp: FIXED_TIMESTAMP,
+			body: BODY,
+		});
+		const provider = standardWebhooks({ secret: SECRET });
+		const result = await provider.verify({ rawBody: BODY, headers: new Headers(headers) });
+		expect(result).toEqual({ valid: true });
+	});
+
+	it("S4: round-trips an empty body", async () => {
+		const headers = await signStandardWebhook({
+			secret: SECRET,
+			id: MSG_ID,
+			timestamp: FIXED_TIMESTAMP,
+			body: "",
+		});
+		const provider = standardWebhooks({ secret: SECRET });
+		const result = await provider.verify({ rawBody: "", headers: new Headers(headers) });
+		expect(result).toEqual({ valid: true });
+	});
+
+	it("S5: round-trips a multibyte body", async () => {
+		const body = '{"text":"こんにちは"}';
+		const headers = await signStandardWebhook({
+			secret: SECRET,
+			id: MSG_ID,
+			timestamp: FIXED_TIMESTAMP,
+			body,
+		});
+		const provider = standardWebhooks({ secret: SECRET });
+		const result = await provider.verify({ rawBody: body, headers: new Headers(headers) });
+		expect(result).toEqual({ valid: true });
+	});
+
+	it("S6: emits a space-separated signature per secret for key rotation", async () => {
+		const headers = await signStandardWebhook({
+			secrets: [SECRET, WRONG_SECRET],
+			id: MSG_ID,
+			timestamp: FIXED_TIMESTAMP,
+			body: BODY,
+		});
+		const signatures = headers["webhook-signature"].split(" ");
+		expect(signatures).toHaveLength(2);
+
+		// Verifies against either secret independently, mirroring the receiver's rotation support.
+		for (const secret of [SECRET, WRONG_SECRET]) {
+			const provider = standardWebhooks({ secret });
+			const result = await provider.verify({ rawBody: BODY, headers: new Headers(headers) });
+			expect(result).toEqual({ valid: true });
+		}
+	});
+
+	it("S7: throws when neither secret nor secrets is provided", async () => {
+		await expect(
+			// @ts-expect-error exercising the runtime guard for missing options
+			signStandardWebhook({ id: MSG_ID, timestamp: FIXED_TIMESTAMP, body: BODY }),
+		).rejects.toThrow("signStandardWebhook requires `secret` or `secrets`");
+	});
+
+	it("S8: throws on invalid base64 secret", async () => {
+		await expect(
+			signStandardWebhook({ secret: "!!invalid!!", id: MSG_ID, body: BODY }),
+		).rejects.toThrow("secret must be valid base64");
 	});
 });
