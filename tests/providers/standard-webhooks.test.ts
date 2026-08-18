@@ -230,6 +230,10 @@ describe("standard-webhooks provider", () => {
 		);
 	});
 
+	it("throws on an empty secret", () => {
+		expect(() => standardWebhooks({ secret: "" })).toThrow("secret must not be empty");
+	});
+
 	it("accepts timestamp at exactly the tolerance boundary", async () => {
 		const provider = standardWebhooks({ secret: SECRET, tolerance: 60 });
 		const exactlyAtBoundary = Math.floor(Date.now() / 1000) - 60;
@@ -534,7 +538,7 @@ describe("signStandardWebhook", () => {
 	it("S11: throws on a fractional timestamp", async () => {
 		await expect(
 			signStandardWebhook({ secret: SECRET, id: MSG_ID, timestamp: 1755300000.5, body: BODY }),
-		).rejects.toThrow("timestamp must be an integer number of seconds");
+		).rejects.toThrow("timestamp must be a positive integer number of seconds");
 	});
 
 	it("S12: throws on a non-finite timestamp", async () => {
@@ -545,7 +549,7 @@ describe("signStandardWebhook", () => {
 				timestamp: Number.POSITIVE_INFINITY,
 				body: BODY,
 			}),
-		).rejects.toThrow("timestamp must be an integer number of seconds");
+		).rejects.toThrow("timestamp must be a positive integer number of seconds");
 	});
 
 	it("S13: throws on an unsafe-integer timestamp", async () => {
@@ -556,6 +560,80 @@ describe("signStandardWebhook", () => {
 				timestamp: Number.MAX_SAFE_INTEGER + 1,
 				body: BODY,
 			}),
-		).rejects.toThrow("timestamp must be an integer number of seconds");
+		).rejects.toThrow("timestamp must be a positive integer number of seconds");
+	});
+
+	it("throws on a zero timestamp", async () => {
+		await expect(
+			signStandardWebhook({ secret: SECRET, id: MSG_ID, timestamp: 0, body: BODY }),
+		).rejects.toThrow("timestamp must be a positive integer number of seconds");
+	});
+
+	it("throws on a negative timestamp", async () => {
+		await expect(
+			signStandardWebhook({ secret: SECRET, id: MSG_ID, timestamp: -5, body: BODY }),
+		).rejects.toThrow("timestamp must be a positive integer number of seconds");
+	});
+
+	it("throws on an empty id", async () => {
+		await expect(
+			signStandardWebhook({ secret: SECRET, id: "", timestamp: FIXED_TIMESTAMP, body: BODY }),
+		).rejects.toThrow("id must be non-empty printable ASCII without whitespace or '.'");
+	});
+
+	it("throws on a whitespace-padded id", async () => {
+		await expect(
+			signStandardWebhook({
+				secret: SECRET,
+				id: "  msg_1  ",
+				timestamp: FIXED_TIMESTAMP,
+				body: BODY,
+			}),
+		).rejects.toThrow("id must be non-empty printable ASCII without whitespace or '.'");
+	});
+
+	it("throws on a non-ASCII id", async () => {
+		await expect(
+			signStandardWebhook({
+				secret: SECRET,
+				id: "msg_あ",
+				timestamp: FIXED_TIMESTAMP,
+				body: BODY,
+			}),
+		).rejects.toThrow("id must be non-empty printable ASCII without whitespace or '.'");
+	});
+
+	it("throws on an id containing a CRLF header injection attempt", async () => {
+		await expect(
+			signStandardWebhook({
+				secret: SECRET,
+				id: "a\r\nx: 1",
+				timestamp: FIXED_TIMESTAMP,
+				body: BODY,
+			}),
+		).rejects.toThrow("id must be non-empty printable ASCII without whitespace or '.'");
+	});
+
+	it("throws on an id containing a '.'", async () => {
+		await expect(
+			signStandardWebhook({ secret: SECRET, id: "a.b", timestamp: FIXED_TIMESTAMP, body: BODY }),
+		).rejects.toThrow("id must be non-empty printable ASCII without whitespace or '.'");
+	});
+
+	it("throws on an empty secret", async () => {
+		await expect(
+			signStandardWebhook({ secret: "", id: MSG_ID, timestamp: FIXED_TIMESTAMP, body: BODY }),
+		).rejects.toThrow("secret must not be empty");
+	});
+
+	it("throws when the secret is only the whsec_ prefix", async () => {
+		await expect(
+			signStandardWebhook({
+				secret: "whsec_",
+				id: MSG_ID,
+				timestamp: FIXED_TIMESTAMP,
+				body: BODY,
+			}),
+		).rejects.toThrow("secret must not be empty");
 	});
 });

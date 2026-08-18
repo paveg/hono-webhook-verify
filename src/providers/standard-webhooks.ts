@@ -52,9 +52,13 @@ export interface StandardWebhookHeaders extends Record<string, string> {
 
 const WHSEC_PREFIX = "whsec_";
 const MAX_SIGNATURES = 10;
+const PRINTABLE_ASCII_NO_DOT = /^[\x21-\x7E]+$/;
 
 function decodeSecret(secret: string): ArrayBuffer {
 	const base64Key = secret.startsWith(WHSEC_PREFIX) ? secret.slice(WHSEC_PREFIX.length) : secret;
+	if (!base64Key) {
+		throw new Error("standard-webhooks: secret must not be empty");
+	}
 	const keyBytes = fromBase64(base64Key);
 	if (!keyBytes) {
 		throw new Error("standard-webhooks: secret must be valid base64 (with optional whsec_ prefix)");
@@ -80,8 +84,15 @@ export async function signStandardWebhook(
 		);
 	}
 	const timestamp = options.timestamp ?? Math.floor(Date.now() / 1000);
-	if (!Number.isSafeInteger(timestamp)) {
-		throw new Error("standard-webhooks: timestamp must be an integer number of seconds");
+	if (!Number.isSafeInteger(timestamp) || timestamp <= 0) {
+		throw new Error("standard-webhooks: timestamp must be a positive integer number of seconds");
+	}
+	// The Standard Webhooks spec forbids '.' in ids because the signed content is
+	// `id.timestamp.body`; Headers also rejects whitespace and non-ASCII characters.
+	if (!PRINTABLE_ASCII_NO_DOT.test(options.id) || options.id.includes(".")) {
+		throw new Error(
+			"standard-webhooks: id must be non-empty printable ASCII without whitespace or '.'",
+		);
 	}
 	const signedContent = `${options.id}.${timestamp}.${options.body}`;
 
