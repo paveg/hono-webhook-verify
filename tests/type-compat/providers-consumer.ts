@@ -4,7 +4,10 @@ import { type LineOptions, line } from "../../dist/providers/line.js";
 import { type ShopifyOptions, shopify } from "../../dist/providers/shopify.js";
 import { type SlackOptions, slack } from "../../dist/providers/slack.js";
 import {
+	type SignStandardWebhookOptions,
+	type StandardWebhookHeaders,
 	type StandardWebhooksOptions,
+	signStandardWebhook,
 	standardWebhooks,
 } from "../../dist/providers/standard-webhooks.js";
 import { type StripeOptions, stripe } from "../../dist/providers/stripe.js";
@@ -30,6 +33,28 @@ const _twilio = twilio(_twilioOpts);
 const _line = line(_lineOpts);
 const _discord = discord(_discordOpts);
 const _sw = standardWebhooks(_swOpts);
+
+// signStandardWebhook: at least one of `secret` / `secrets` is required at the type level.
+const _signOptsSecret: SignStandardWebhookOptions = {
+	secret: "whsec_swh",
+	id: "msg_1",
+	body: "{}",
+};
+const _signOptsSecrets: SignStandardWebhookOptions = {
+	secrets: ["whsec_a", "whsec_b"],
+	id: "msg_1",
+	body: "{}",
+};
+const _signHeaders: Promise<StandardWebhookHeaders> = signStandardWebhook(_signOptsSecret);
+void signStandardWebhook(_signOptsSecrets);
+
+// The returned headers must be directly assignable to HeadersInit.
+async function _headersAssignable() {
+	const headers = await _signHeaders;
+	new Headers(headers);
+	await fetch("https://example.com", { method: "POST", headers, body: "{}" });
+}
+void _headersAssignable;
 
 void _stripe;
 void _github;

@@ -9,24 +9,42 @@ export interface StandardWebhooksOptions {
 	tolerance?: number;
 }
 
-export interface SignStandardWebhookOptions {
-	/** Signing secret. Accepts the whsec_ prefix (stripped), same as the verifier. */
-	secret?: string;
-	/**
-	 * Multiple signing secrets for key rotation. One `v1,` signature is emitted per
-	 * secret, space-separated — the same format the verifier already accepts.
-	 * Takes precedence over `secret` when both are provided.
-	 */
-	secrets?: string[];
+/**
+ * Signing credentials for `signStandardWebhook()`. At least one of `secret` or
+ * `secrets` is required; when both are given, `secrets` takes precedence.
+ */
+type SignStandardWebhookCredentials =
+	| {
+			/** Signing secret. Accepts the whsec_ prefix (stripped), same as the verifier. */
+			secret: string;
+			/**
+			 * Multiple signing secrets for key rotation. One `v1,` signature is emitted per
+			 * secret, space-separated — the same format the verifier already accepts.
+			 * Takes precedence over `secret` when both are provided.
+			 */
+			secrets?: string[];
+	  }
+	| {
+			secret?: string;
+			/**
+			 * Multiple signing secrets for key rotation. One `v1,` signature is emitted per
+			 * secret, space-separated — the same format the verifier already accepts.
+			 */
+			secrets: string[];
+	  };
+
+export type SignStandardWebhookOptions = SignStandardWebhookCredentials & {
 	/** Message id, sent back as the `webhook-id` header. */
 	id: string;
 	/** Signing timestamp in seconds (default: the current time). */
 	timestamp?: number;
 	/** Raw request body to sign. */
 	body: string;
-}
+};
 
-export interface StandardWebhookHeaders {
+// Extends Record<string, string> so the result is directly assignable to
+// HeadersInit (e.g. `new Headers(headers)`, `fetch(url, { headers })`).
+export interface StandardWebhookHeaders extends Record<string, string> {
 	"webhook-id": string;
 	"webhook-timestamp": string;
 	"webhook-signature": string;
