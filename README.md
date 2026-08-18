@@ -177,7 +177,13 @@ await fetch(destinationUrl, { method: "POST", headers, body: rawBodyString });
 
 Pass `secrets: string[]` instead of `secret` to sign with multiple secrets for key
 rotation — one `v1,` signature is emitted per secret, space-separated, matching the
-format `standardWebhooks()` already accepts on the receiving end.
+format `standardWebhooks()` already accepts on the receiving end. At most 10 secrets
+are accepted, since the verifier only inspects the first 10 signatures.
+
+`signStandardWebhook()` throws on an empty or non-base64 secret, on more than 10
+secrets, on a non-positive or non-integer timestamp, and on an `id` that is empty,
+contains whitespace or non-ASCII characters, or contains `.` (the Standard Webhooks
+spec forbids `.` in ids because the signed content is `id.timestamp.body`).
 
 ### Custom Provider
 

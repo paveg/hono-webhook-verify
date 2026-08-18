@@ -449,7 +449,7 @@ describe("signStandardWebhook", () => {
 		expect(timestamp).toBeLessThanOrEqual(after);
 	});
 
-	it("S3: strips the whsec_ prefix like the verifier", async () => {
+	it("S3: verifies with the whsec_-prefixed secret when signed with the bare secret", async () => {
 		const headers = await signStandardWebhook({
 			secret: SECRET_BASE64,
 			id: MSG_ID,
