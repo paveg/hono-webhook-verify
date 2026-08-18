@@ -508,7 +508,7 @@ describe("signStandardWebhook", () => {
 		await expect(
 			// @ts-expect-error exercising the runtime guard for missing options
 			signStandardWebhook({ id: MSG_ID, timestamp: FIXED_TIMESTAMP, body: BODY }),
-		).rejects.toThrow("signStandardWebhook requires `secret` or `secrets`");
+		).rejects.toThrow("signStandardWebhook requires `secret` or a non-empty `secrets`");
 	});
 
 	it("S8: throws on invalid base64 secret", async () => {
@@ -635,5 +635,21 @@ describe("signStandardWebhook", () => {
 				body: BODY,
 			}),
 		).rejects.toThrow("secret must not be empty");
+	});
+
+	it("throws when secrets is an empty array", async () => {
+		await expect(
+			signStandardWebhook({ secrets: [], id: MSG_ID, timestamp: FIXED_TIMESTAMP, body: BODY }),
+		).rejects.toThrow("signStandardWebhook requires `secret` or a non-empty `secrets`");
+	});
+
+	it("S14: matches the reference implementation's signature (known-answer vector)", async () => {
+		const headers = await signStandardWebhook({
+			secret: "MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=",
+			id: "msg_2b1c3d4e5f",
+			timestamp: 1755300000,
+			body: '{"event":"ping","n":1}',
+		});
+		expect(headers["webhook-signature"]).toBe("v1,AKA3rHe5r1ZckfgaJAOjjWQ2J999Qbaqxu4Ekf24A+c=");
 	});
 });

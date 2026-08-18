@@ -34,7 +34,7 @@ const _line = line(_lineOpts);
 const _discord = discord(_discordOpts);
 const _sw = standardWebhooks(_swOpts);
 
-// signStandardWebhook: at least one of `secret` / `secrets` is required at the type level.
+// signStandardWebhook: exactly one of `secret` / `secrets` is required at the type level.
 const _signOptsSecret: SignStandardWebhookOptions = {
 	secret: "whsec_swh",
 	id: "msg_1",
@@ -47,6 +47,11 @@ const _signOptsSecrets: SignStandardWebhookOptions = {
 };
 const _signHeaders: Promise<StandardWebhookHeaders> = signStandardWebhook(_signOptsSecret);
 void signStandardWebhook(_signOptsSecrets);
+
+// @ts-expect-error secret and secrets are mutually exclusive
+void signStandardWebhook({ secret: "whsec_a", secrets: ["whsec_b"], id: "msg_1", body: "{}" });
+// @ts-expect-error at least one of secret / secrets is required
+void signStandardWebhook({ id: "msg_1", body: "{}" });
 
 // The returned headers must be directly assignable to HeadersInit.
 async function _headersAssignable() {

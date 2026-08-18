@@ -10,25 +10,21 @@ export interface StandardWebhooksOptions {
 }
 
 /**
- * Signing credentials for `signStandardWebhook()`. At least one of `secret` or
- * `secrets` is required; when both are given, `secrets` takes precedence.
+ * Signing credentials for `signStandardWebhook()`. Exactly one of `secret` or
+ * `secrets` is required.
  */
 type SignStandardWebhookCredentials =
 	| {
 			/** Signing secret. Accepts the whsec_ prefix (stripped), same as the verifier. */
 			secret: string;
-			/**
-			 * Multiple signing secrets for key rotation. One `v1,` signature is emitted per
-			 * secret, space-separated — the same format the verifier already accepts.
-			 * Takes precedence over `secret` when both are provided.
-			 */
-			secrets?: string[];
+			secrets?: never;
 	  }
 	| {
-			secret?: string;
+			secret?: never;
 			/**
-			 * Multiple signing secrets for key rotation. One `v1,` signature is emitted per
-			 * secret, space-separated — the same format the verifier already accepts.
+			 * Multiple signing secrets for key rotation (max 10). One `v1,` signature is
+			 * emitted per secret, space-separated — the same format the verifier already
+			 * accepts.
 			 */
 			secrets: string[];
 	  };
@@ -42,13 +38,11 @@ export type SignStandardWebhookOptions = SignStandardWebhookCredentials & {
 	body: string;
 };
 
-// Extends Record<string, string> so the result is directly assignable to
-// HeadersInit (e.g. `new Headers(headers)`, `fetch(url, { headers })`).
-export interface StandardWebhookHeaders extends Record<string, string> {
+export type StandardWebhookHeaders = {
 	"webhook-id": string;
 	"webhook-timestamp": string;
 	"webhook-signature": string;
-}
+};
 
 const WHSEC_PREFIX = "whsec_";
 const MAX_SIGNATURES = 10;
@@ -76,7 +70,9 @@ export async function signStandardWebhook(
 ): Promise<StandardWebhookHeaders> {
 	const secrets = options.secrets ?? (options.secret !== undefined ? [options.secret] : []);
 	if (secrets.length === 0) {
-		throw new Error("standard-webhooks: signStandardWebhook requires `secret` or `secrets`");
+		throw new Error(
+			"standard-webhooks: signStandardWebhook requires `secret` or a non-empty `secrets`",
+		);
 	}
 	if (secrets.length > MAX_SIGNATURES) {
 		throw new Error(
