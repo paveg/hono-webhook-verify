@@ -46,7 +46,7 @@ export type StandardWebhookHeaders = {
 
 const WHSEC_PREFIX = "whsec_";
 const MAX_SIGNATURES = 10;
-const PRINTABLE_ASCII_NO_DOT = /^[\x21-\x7E]+$/;
+const PRINTABLE_ASCII = /^[\x21-\x7E]+$/;
 
 function decodeSecret(secret: string): ArrayBuffer {
 	const base64Key = secret.startsWith(WHSEC_PREFIX) ? secret.slice(WHSEC_PREFIX.length) : secret;
@@ -85,7 +85,7 @@ export async function signStandardWebhook(
 	}
 	// The Standard Webhooks spec forbids '.' in ids because the signed content is
 	// `id.timestamp.body`; Headers also rejects whitespace and non-ASCII characters.
-	if (!PRINTABLE_ASCII_NO_DOT.test(options.id) || options.id.includes(".")) {
+	if (!PRINTABLE_ASCII.test(options.id) || options.id.includes(".")) {
 		throw new Error(
 			"standard-webhooks: id must be non-empty printable ASCII without whitespace or '.'",
 		);
