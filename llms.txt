@@ -34,7 +34,7 @@ The middleware reads the raw request body once, runs constant-time signature ver
 - [Twilio](https://github.com/paveg/hono-webhook-verify/blob/main/src/providers/twilio.ts): HMAC-SHA1 over URL plus form params (`X-Twilio-Signature`).
 - [LINE](https://github.com/paveg/hono-webhook-verify/blob/main/src/providers/line.ts): HMAC-SHA256 base64 (`X-Line-Signature`).
 - [Discord](https://github.com/paveg/hono-webhook-verify/blob/main/src/providers/discord.ts): Ed25519 asymmetric verification (`X-Signature-Ed25519`).
-- [Standard Webhooks](https://github.com/paveg/hono-webhook-verify/blob/main/src/providers/standard-webhooks.ts): svix-compatible HMAC-SHA256 (`webhook-signature`).
+- [Standard Webhooks](https://github.com/paveg/hono-webhook-verify/blob/main/src/providers/standard-webhooks.ts): svix-compatible HMAC-SHA256 (`webhook-signature`); also exports `signStandardWebhook()` for outbound signing.
 - [Provider types](https://github.com/paveg/hono-webhook-verify/blob/main/src/providers/types.ts): Shared provider option and result shapes.
 
 ## Optional

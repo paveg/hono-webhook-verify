@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { standardWebhooks } from "../../src/providers/standard-webhooks.js";
+import { signStandardWebhook, standardWebhooks } from "../../src/providers/standard-webhooks.js";
 import { EXPIRED_OFFSET_S } from "../helpers/constants.js";
 import { generateStandardWebhooksSignature } from "../helpers/signatures.js";
 
@@ -230,6 +230,10 @@ describe("standard-webhooks provider", () => {
 		);
 	});
 
+	it("throws on an empty secret", () => {
+		expect(() => standardWebhooks({ secret: "" })).toThrow("secret must not be empty");
+	});
+
 	it("accepts timestamp at exactly the tolerance boundary", async () => {
 		const provider = standardWebhooks({ secret: SECRET, tolerance: 60 });
 		const exactlyAtBoundary = Math.floor(Date.now() / 1000) - 60;
@@ -409,5 +413,243 @@ describe("standard-webhooks provider", () => {
 			}),
 		});
 		expect(result).toEqual({ valid: false, reason: "timestamp-expired" });
+	});
+});
+
+describe("signStandardWebhook", () => {
+	const FIXED_TIMESTAMP = Math.floor(Date.now() / 1000);
+
+	it("S1: round-trips through standardWebhooks().verify()", async () => {
+		const headers = await signStandardWebhook({
+			secret: SECRET,
+			id: MSG_ID,
+			timestamp: FIXED_TIMESTAMP,
+			body: BODY,
+		});
+		expect(headers).toEqual({
+			"webhook-id": MSG_ID,
+			"webhook-timestamp": String(FIXED_TIMESTAMP),
+			"webhook-signature": expect.stringMatching(/^v1,/),
+		});
+
+		const provider = standardWebhooks({ secret: SECRET });
+		const result = await provider.verify({
+			rawBody: BODY,
+			headers: new Headers(headers),
+		});
+		expect(result).toEqual({ valid: true });
+	});
+
+	it("S2: defaults timestamp to the current time in seconds", async () => {
+		const before = Math.floor(Date.now() / 1000);
+		const headers = await signStandardWebhook({ secret: SECRET, id: MSG_ID, body: BODY });
+		const after = Math.floor(Date.now() / 1000);
+		const timestamp = Number(headers["webhook-timestamp"]);
+		expect(timestamp).toBeGreaterThanOrEqual(before);
+		expect(timestamp).toBeLessThanOrEqual(after);
+	});
+
+	it("S3: verifies with the whsec_-prefixed secret when signed with the bare secret", async () => {
+		const headers = await signStandardWebhook({
+			secret: SECRET_BASE64,
+			id: MSG_ID,
+			timestamp: FIXED_TIMESTAMP,
+			body: BODY,
+		});
+		const provider = standardWebhooks({ secret: SECRET });
+		const result = await provider.verify({ rawBody: BODY, headers: new Headers(headers) });
+		expect(result).toEqual({ valid: true });
+	});
+
+	it("S4: round-trips an empty body", async () => {
+		const headers = await signStandardWebhook({
+			secret: SECRET,
+			id: MSG_ID,
+			timestamp: FIXED_TIMESTAMP,
+			body: "",
+		});
+		const provider = standardWebhooks({ secret: SECRET });
+		const result = await provider.verify({ rawBody: "", headers: new Headers(headers) });
+		expect(result).toEqual({ valid: true });
+	});
+
+	it("S5: round-trips a multibyte body", async () => {
+		const body = '{"text":"こんにちは"}';
+		const headers = await signStandardWebhook({
+			secret: SECRET,
+			id: MSG_ID,
+			timestamp: FIXED_TIMESTAMP,
+			body,
+		});
+		const provider = standardWebhooks({ secret: SECRET });
+		const result = await provider.verify({ rawBody: body, headers: new Headers(headers) });
+		expect(result).toEqual({ valid: true });
+	});
+
+	it("S6: emits a space-separated signature per secret for key rotation", async () => {
+		const headers = await signStandardWebhook({
+			secrets: [SECRET, WRONG_SECRET],
+			id: MSG_ID,
+			timestamp: FIXED_TIMESTAMP,
+			body: BODY,
+		});
+		const signatures = headers["webhook-signature"].split(" ");
+		expect(signatures).toHaveLength(2);
+
+		// Verifies against either secret independently, mirroring the receiver's rotation support.
+		for (const secret of [SECRET, WRONG_SECRET]) {
+			const provider = standardWebhooks({ secret });
+			const result = await provider.verify({ rawBody: BODY, headers: new Headers(headers) });
+			expect(result).toEqual({ valid: true });
+		}
+	});
+
+	it("S7: throws when neither secret nor secrets is provided", async () => {
+		await expect(
+			// @ts-expect-error exercising the runtime guard for missing options
+			signStandardWebhook({ id: MSG_ID, timestamp: FIXED_TIMESTAMP, body: BODY }),
+		).rejects.toThrow("signStandardWebhook requires `secret` or a non-empty `secrets`");
+	});
+
+	it("S8: throws on invalid base64 secret", async () => {
+		await expect(
+			signStandardWebhook({ secret: "!!invalid!!", id: MSG_ID, body: BODY }),
+		).rejects.toThrow("secret must be valid base64");
+	});
+
+	it("S9: throws when secrets exceeds the verifier's 10-signature limit", async () => {
+		const secrets = Array.from({ length: 11 }, () => SECRET);
+		await expect(
+			signStandardWebhook({ secrets, id: MSG_ID, timestamp: FIXED_TIMESTAMP, body: BODY }),
+		).rejects.toThrow("supports at most 10 secrets");
+	});
+
+	it("S10: accepts exactly 10 secrets (at the verifier's limit)", async () => {
+		const secrets = Array.from({ length: 10 }, () => SECRET);
+		const headers = await signStandardWebhook({
+			secrets,
+			id: MSG_ID,
+			timestamp: FIXED_TIMESTAMP,
+			body: BODY,
+		});
+		expect(headers["webhook-signature"].split(" ")).toHaveLength(10);
+	});
+
+	it("S11: throws on a fractional timestamp", async () => {
+		await expect(
+			signStandardWebhook({ secret: SECRET, id: MSG_ID, timestamp: 1755300000.5, body: BODY }),
+		).rejects.toThrow("timestamp must be a positive integer number of seconds");
+	});
+
+	it("S12: throws on a non-finite timestamp", async () => {
+		await expect(
+			signStandardWebhook({
+				secret: SECRET,
+				id: MSG_ID,
+				timestamp: Number.POSITIVE_INFINITY,
+				body: BODY,
+			}),
+		).rejects.toThrow("timestamp must be a positive integer number of seconds");
+	});
+
+	it("S13: throws on an unsafe-integer timestamp", async () => {
+		await expect(
+			signStandardWebhook({
+				secret: SECRET,
+				id: MSG_ID,
+				timestamp: Number.MAX_SAFE_INTEGER + 1,
+				body: BODY,
+			}),
+		).rejects.toThrow("timestamp must be a positive integer number of seconds");
+	});
+
+	it("throws on a zero timestamp", async () => {
+		await expect(
+			signStandardWebhook({ secret: SECRET, id: MSG_ID, timestamp: 0, body: BODY }),
+		).rejects.toThrow("timestamp must be a positive integer number of seconds");
+	});
+
+	it("throws on a negative timestamp", async () => {
+		await expect(
+			signStandardWebhook({ secret: SECRET, id: MSG_ID, timestamp: -5, body: BODY }),
+		).rejects.toThrow("timestamp must be a positive integer number of seconds");
+	});
+
+	it("throws on an empty id", async () => {
+		await expect(
+			signStandardWebhook({ secret: SECRET, id: "", timestamp: FIXED_TIMESTAMP, body: BODY }),
+		).rejects.toThrow("id must be non-empty printable ASCII without whitespace or '.'");
+	});
+
+	it("throws on a whitespace-padded id", async () => {
+		await expect(
+			signStandardWebhook({
+				secret: SECRET,
+				id: "  msg_1  ",
+				timestamp: FIXED_TIMESTAMP,
+				body: BODY,
+			}),
+		).rejects.toThrow("id must be non-empty printable ASCII without whitespace or '.'");
+	});
+
+	it("throws on a non-ASCII id", async () => {
+		await expect(
+			signStandardWebhook({
+				secret: SECRET,
+				id: "msg_あ",
+				timestamp: FIXED_TIMESTAMP,
+				body: BODY,
+			}),
+		).rejects.toThrow("id must be non-empty printable ASCII without whitespace or '.'");
+	});
+
+	it("throws on an id containing a CRLF header injection attempt", async () => {
+		await expect(
+			signStandardWebhook({
+				secret: SECRET,
+				id: "a\r\nx: 1",
+				timestamp: FIXED_TIMESTAMP,
+				body: BODY,
+			}),
+		).rejects.toThrow("id must be non-empty printable ASCII without whitespace or '.'");
+	});
+
+	it("throws on an id containing a '.'", async () => {
+		await expect(
+			signStandardWebhook({ secret: SECRET, id: "a.b", timestamp: FIXED_TIMESTAMP, body: BODY }),
+		).rejects.toThrow("id must be non-empty printable ASCII without whitespace or '.'");
+	});
+
+	it("throws on an empty secret", async () => {
+		await expect(
+			signStandardWebhook({ secret: "", id: MSG_ID, timestamp: FIXED_TIMESTAMP, body: BODY }),
+		).rejects.toThrow("secret must not be empty");
+	});
+
+	it("throws when the secret is only the whsec_ prefix", async () => {
+		await expect(
+			signStandardWebhook({
+				secret: "whsec_",
+				id: MSG_ID,
+				timestamp: FIXED_TIMESTAMP,
+				body: BODY,
+			}),
+		).rejects.toThrow("secret must not be empty");
+	});
+
+	it("throws when secrets is an empty array", async () => {
+		await expect(
+			signStandardWebhook({ secrets: [], id: MSG_ID, timestamp: FIXED_TIMESTAMP, body: BODY }),
+		).rejects.toThrow("signStandardWebhook requires `secret` or a non-empty `secrets`");
+	});
+
+	it("S14: matches the reference implementation's signature (known-answer vector)", async () => {
+		const headers = await signStandardWebhook({
+			secret: "MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=",
+			id: "msg_2b1c3d4e5f",
+			timestamp: 1755300000,
+			body: '{"event":"ping","n":1}',
+		});
+		expect(headers["webhook-signature"]).toBe("v1,AKA3rHe5r1ZckfgaJAOjjWQ2J999Qbaqxu4Ekf24A+c=");
 	});
 });
