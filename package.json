@@ -197,7 +197,7 @@
 		"lefthook": "2.1.12",
 		"tsup": "^8.0.0",
 		"typescript": "^6.0.3",
-		"vitest": "^4.1.11"
+		"vitest": "^5.0.0"
 	},
 	"packageManager": "pnpm@10.14.0",
 	"pnpm": {
